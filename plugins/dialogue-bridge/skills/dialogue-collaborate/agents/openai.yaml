@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dialogue Collaboration"
+  short_description: "Revisit existing chats, exchange corrections, and continue"
+  default_prompt: "Use $dialogue-collaborate to revisit these conversations, compare their understanding, and identify what each should do next."

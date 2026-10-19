@@ -1,0 +1,20 @@
+name: Share a trial / 分享试用感受
+description: Tell us what was useful, missed, confusing, or worth changing.
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: What were you trying to do? / 你想完成什么？
+      description: A rough idea or a short impression is welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What happened, and what felt off? / 实际发生了什么，哪里感觉不对？
+      description: Did another chat add something useful? Was context missed or an old conclusion carried forward?
+  - type: textarea
+    id: details
+    attributes:
+      label: Optional details / 可选补充
+      description: Codex version, system, a redacted excerpt, or an idea for another tool to combine with. No full private transcript needed.

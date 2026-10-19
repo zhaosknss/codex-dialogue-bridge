@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "dialogue-bridge",
+  "version": "0.1.0-alpha.5",
+  "description": "Revisit selected Codex conversations, exchange grounded corrections, and continue each conversation with relevant updates.",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "Dialogue Bridge",
+        "shortDescription": "Revisit, compare, and continue existing Codex conversations",
+        "category": "Productivity"
+      }
+    }
+  }
+}
