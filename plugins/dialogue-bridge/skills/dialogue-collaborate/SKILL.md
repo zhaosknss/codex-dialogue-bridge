@@ -1,16 +1,35 @@
 ---
 name: dialogue-collaborate
-description: Revisit selected existing Codex conversations, compare their accumulated understanding, exchange sourced corrections, and continue each conversation with relevant updates. Use for cross-chat drift, repeated background explanations, or joint review; a simple current-chat recap needs no setup.
+description: Understand the supplied Codex chat links when Dialogue Bridge is mentioned, even without an additional request. Reuse sourced, revisable background in a new chat, or compare existing chats when requested. Use for repeated explanations, cross-chat drift and joint review; a simple current-chat recap needs no setup.
 ---
 
 # Dialogue collaboration
+
+When the user mentions Dialogue Bridge and supplies `codex://threads/` links with
+no further request, default to understanding those selected conversations in this
+chat. Link order does not matter. A focus such as "了解写法" or "聊一个新方向"
+guides retrieval; it is optional. Do not require a saved name, a handoff document,
+an extra command or a choice of modes. Use the continuation reference below to
+match an existing background or prepare it internally, then briefly explain the
+useful understanding and any material uncertainty. With links alone, stop there;
+do not execute unfinished source tasks or invite the original chats to respond.
+
+When the user wants a new chat to understand prior work, writing choices, examples
+or the way they have been collaborating, use [saved background and continuation](references/continuation.md).
+That mode separates source chats from the new reader and can reuse a saved name.
+Read that reference instead of setting up a group exchange. The user need not
+prepare handoff documents, index data or specify which memory component to use.
+
+When the user wants the original chats themselves to compare views and contribute,
+continue with the exchange workflow below. These modes share history retrieval
+and evidence checks; neither requires a fixed debate or a new chat per step.
 
 Help existing conversations benefit from what the others learned. Preserve each
 conversation's own purpose and accumulated context. Another conversation can
 correct the coordinator. Retrieval, disagreement, revision and continuation are
 parts of one workflow, not a requirement to run a fixed debate every time.
 
-This development version provides stored-history reads and a local shared inbox.
+This early version provides stored-history reads and a local shared inbox.
 The bundled CLI does **not** wake or send prompts to another chat. Distinguish
 your analysis of another chat's history from that original chat actually responding.
 Original chats can participate when the user invokes this skill there, in the same
@@ -25,6 +44,13 @@ Recover the goal and recent corrections from available context before choosing
 what to retrieve. A new suggestion may clarify, narrow, or explore an alternative;
 it does not automatically replace an earlier decision. Reconsider old conclusions
 using original evidence, later corrections and actual results together.
+
+Resolve what a proposed change affects before recommending a new direction.
+"Different", "another approach" or "换个方向" can refer to the subject, method,
+expression or scope. Preserve what the user has kept; when evidence is insufficient,
+state a provisional interpretation rather than silently choosing one dimension.
+Ask only if the difference materially changes the next action. Do not turn a local
+example or correction into a permanent rule for the user.
 
 Accept an ordinary request such as "Let these chats compare what we currently
 understand"; the user need not prepare UUIDs, a transcript summary or record JSON.

@@ -32,7 +32,7 @@ class ReadOnlyCodex:
         self.reader.start()
         try:
             self.request("initialize", {
-                "clientInfo": {"name": "dialogue_bridge_reader", "version": "0.1.0-alpha.2"},
+                "clientInfo": {"name": "dialogue_bridge_reader", "version": "0.1.0-alpha.6"},
             })
             self._send({"method": "initialized", "params": {}})
         except BaseException:
@@ -84,10 +84,17 @@ class ReadOnlyCodex:
         return self.request("thread/read", {"threadId": thread_id})["thread"]
 
     def pages(self, thread_id):
+        yield from self._pages(thread_id, "asc")
+
+    def recent_pages(self, thread_id):
+        """Newest first; callers can stop after rechecking a saved boundary turn."""
+        yield from self._pages(thread_id, "desc")
+
+    def _pages(self, thread_id, direction):
         cursor = None
         seen = set()
         while True:
-            params = {"threadId": thread_id, "limit": 25, "sortDirection": "asc", "itemsView": "full"}
+            params = {"threadId": thread_id, "limit": 25, "sortDirection": direction, "itemsView": "full"}
             if cursor is not None:
                 params["cursor"] = cursor
             page = self.request("thread/turns/list", params)

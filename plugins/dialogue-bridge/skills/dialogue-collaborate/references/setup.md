@@ -2,7 +2,8 @@
 
 Use Python 3.11+ and Git. First-time setup needs Internet access to the pinned
 public dependency and its Python build requirements. History-only commands use
-stdlib; `start`, records, inboxes and the demo also need Agent State Core.
+stdlib; `start`, records, inboxes, saved-background commands (except `context-list`)
+and the demos also need Agent State Core.
 
 The plugin bundles `requirements.txt`, `scripts/setup.py` and `scripts/demo.py`.
 Resolve these from the installed plugin root, three directories above this file's

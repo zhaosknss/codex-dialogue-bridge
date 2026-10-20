@@ -1,4 +1,4 @@
 interface:
-  display_name: "Dialogue Collaboration"
-  short_description: "Revisit existing chats, exchange corrections, and continue"
-  default_prompt: "Use $dialogue-collaborate to revisit these conversations, compare their understanding, and identify what each should do next."
+  display_name: "Dialogue Bridge"
+  short_description: "Reuse sourced background or compare existing chats"
+  default_prompt: "Use $dialogue-collaborate to understand the supplied chat links. If I add a request, focus on it; otherwise briefly explain the useful background and wait for my next task."
