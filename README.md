@@ -7,6 +7,8 @@ or help existing chats compare notes and carry discoveries back into their work.
 
 [中文说明](README.zh-CN.md) · [Install](#install-in-codex) · [Try an example](#try-a-small-example) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
 
+[See a short walkthrough](docs/WALKTHROUGH.md) · [Inspect the handoff comparison](docs/COMPARISON.md) · [Try it and share an impression](docs/TRY_IT.md)
+
 After installing, start a new local chat, select `@Dialogue Bridge`, and paste the
 conversation links. With links alone it first understands the background; add a
 request if you want a particular focus. You do not have to write a handoff document.
@@ -187,6 +189,11 @@ interpretation and reopened it incrementally. That interpretation was formed by
 the coordinating model, not a blind independent-agent evaluation. Comparative
 improvements in understanding, feedback count and total token cost remain questions
 for actual use and matched-task comparisons.
+
+A [small information-matched response trial](docs/COMPARISON.md) compared a
+complete handoff with actual Bridge exports. Both conditions passed the 12
+selected checks; it did not show an understanding-quality advantage. Inputs,
+responses, protocol and limitations are published for inspection.
 
 See [contributing](CONTRIBUTING.md), [dependency and design references](UPSTREAM.md)
 and the [changelog](CHANGELOG.md). MIT License.

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A recorded Dialogue Bridge walkthrough using fictional chats and actual response excerpts.">
+<title>Dialogue Bridge — carry the context</title>
+<style>
+:root{--ink:#172b38;--muted:#516877;--paper:#eef5f8;--white:#fff;--teal:#087f83;--purple:#7057a3;--line:#ccdde5;--display:Georgia,'Times New Roman',serif;--body:'Segoe UI',Arial,sans-serif;--mono:Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 var(--body)}a{color:var(--teal);text-underline-offset:4px}button,a{outline-offset:5px}button:focus-visible,a:focus-visible{outline:3px solid var(--purple)}
+main{max-width:1160px;margin:auto;padding:32px 38px 48px}.masthead{display:flex;justify-content:space-between;gap:24px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:20px}.brand{font-weight:700;letter-spacing:-.3px;font-size:21px}.mark{display:inline-block;width:14px;height:14px;border:2px solid var(--teal);border-radius:5px;margin-right:9px;box-shadow:5px 4px 0 -1px var(--paper),6px 5px 0 0 var(--ink)}.edition{font:12px var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+h1{font:normal clamp(39px,5.2vw,64px)/1.08 var(--display);max-width:800px;letter-spacing:-1.5px;margin:40px 0 18px}h1 em{font-style:normal;color:var(--teal)}.intro{max-width:760px;color:var(--muted);margin:0 0 25px}.record-label{font:12px var(--mono);color:var(--purple);letter-spacing:.2px}.steps{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 20px}.steps button{cursor:pointer;border:1px solid var(--line);padding:10px 15px;border-radius:7px;background:transparent;font:600 14px var(--body);color:var(--ink)}.steps button[aria-pressed="true"]{background:var(--ink);color:var(--white);border-color:var(--ink)}.steps button span{font:12px var(--mono);margin-right:9px;opacity:.7}
+.scene{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1.18fr);align-items:stretch;min-height:345px}.card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:24px 26px}.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font:12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.6px}.source-tag{color:var(--teal);font:11px var(--mono);white-space:nowrap}.quote{border-left:3px solid var(--teal);padding-left:17px;margin:24px 0 18px;font-size:17px}.small{font-size:14px;color:var(--muted)}.bridge-line{display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:26px}.reply{font-size:18px;margin-top:23px}.reply p{margin:0 0 17px}.reply strong{color:var(--teal);font-weight:650}.footnote{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}.comparison{display:flex;gap:22px;align-items:flex-start;margin:23px 0 30px;font-size:14px;color:var(--muted)}.comparison b{color:var(--ink);white-space:nowrap;font-weight:600}.actions{display:flex;gap:20px;flex-wrap:wrap;align-items:center}.install{background:var(--teal);color:white;text-decoration:none;padding:11px 18px;border-radius:7px;font-size:14px;font-weight:600}.afterword{margin:24px 0 0;color:var(--muted);font-size:13px}footer{margin-top:34px;border-top:1px solid var(--line);padding-top:18px;font-size:12px;color:var(--muted)}[hidden]{display:none!important}
+@media(max-width:700px){main{padding:22px 20px 30px}.masthead{align-items:flex-start}.edition{text-align:right;max-width:120px;line-height:1.5}h1{margin-top:29px}.scene{grid-template-columns:minmax(0,1fr);gap:10px;min-height:0}.bridge-line{transform:rotate(90deg);height:22px}.card{padding:21px}.comparison{display:block}.comparison b{display:block;margin-bottom:7px}.steps{gap:7px}.steps button{padding:9px 10px;font-size:12px}.steps button span{margin-right:5px}}
+@media(prefers-reduced-motion:no-preference){.card{animation:appear .22s ease-out}@keyframes appear{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<main>
+<header class="masthead"><div class="brand"><span class="mark" aria-hidden="true"></span>Dialogue Bridge</div><div class="edition">Open source · Codex plugin</div></header>
+<h1>Carry the context.<br>Keep room to <em>change your mind.</em></h1>
+<p class="intro">One chat holds the original idea. Another holds an important correction. Bring useful understanding into the next conversation, with sources you can revisit.</p>
+<div class="record-label">Recorded response excerpts · fictional sources · alpha.6</div>
+<nav class="steps" aria-label="Walkthrough stages">
+<button type="button" aria-pressed="true" aria-controls="stage-0" data-stage="0"><span>01</span>Read the sources</button>
+<button type="button" aria-pressed="false" aria-controls="stage-1" data-stage="1"><span>02</span>See the new response</button>
+<button type="button" aria-pressed="false" aria-controls="stage-2" data-stage="2"><span>03</span>A later correction</button>
+</nav>
+<section id="stage-0" class="scene" aria-label="Source conversations">
+<article class="card"><div class="card-head">Source chat<span class="source-tag">Original idea</span></div><blockquote class="quote">“Let us discuss it first; do not write code yet. Use science-fiction books in the example, but the app should work for other books too.”</blockquote><p class="small">The genre is an example. The current stage is discussion.</p></article>
+<div class="bridge-line" aria-hidden="true">↔</div>
+<article class="card"><div class="card-head">Other source messages<span class="source-tag">Scope + branch</span></div><blockquote class="quote">“Sharing is only a candidate feature; it has not been decided.”</blockquote><blockquote class="quote">“Keep that exploration separate until I choose what to bring back to the main app.”</blockquote><p class="small">A branch can explore freely without turning every idea into a decision.</p></article>
+</section>
+<section id="stage-1" class="scene" aria-label="Recorded initial response" hidden>
+<article class="card"><div class="card-head">In a new local chat<span class="source-tag">Your selected chats</span></div><p class="reply">Select <strong>@Dialogue Bridge</strong><br>Paste your source conversation links.</p><p class="small">Links alone mean “understand this background”. You can also add what you want to focus on.</p><p class="footnote">The recorded trial used a Bridge export prepared from fictional sources. It did not record this desktop interaction.</p></article>
+<div class="bridge-line" aria-hidden="true">→</div>
+<article class="card"><div class="card-head">Actual response excerpt<span class="source-tag">Initial phase</span></div><div class="reply"><p>“Version one includes a book list and reading progress. <strong>Coding is not authorized.</strong>”</p><p>“Sharing remains a candidate. Book-club exploration stays separate until you choose what to bring into the main app.”</p></div><p class="footnote">The model interprets the material. The plugin supplies sources, storage and refresh.</p></article>
+</section>
+<section id="stage-2" class="scene" aria-label="Recorded response to a correction" hidden>
+<article class="card"><div class="card-head">Later user message<span class="source-tag">A changed stage</span></div><blockquote class="quote">“Now implement the local prototype with a book list and reading progress. Still no accounts or sharing.”</blockquote><blockquote class="quote">“Bring back the idea of optional club tags only as a candidate for later, not a requirement.”</blockquote><p class="small">New source text was surfaced for review. The saved understanding was marked as needing review.</p></article>
+<div class="bridge-line" aria-hidden="true">→</div>
+<article class="card"><div class="card-head">Actual response excerpt<span class="source-tag">Update phase</span></div><div class="reply"><p>“Implement the local prototype with those two core features, <strong>without accounts or sharing.</strong> Club tags are not an implementation requirement.”</p></div><p class="footnote">This response revised the interpretation. The trial did not execute the project or save a new understanding revision.</p></article>
+</section>
+<div class="comparison"><b>A complete handoff worked too.</b><span>Both conditions preserved all 12 selected boundaries in this small trial. It found no understanding-quality advantage. Explore whether the source and revision workflow helps in your own use. <a href="https://github.com/zhaosknss/codex-dialogue-bridge/blob/codex/initial-plugin/docs/COMPARISON.md">Inspect the full record →</a></span></div>
+<div class="actions"><a class="install" href="https://github.com/zhaosknss/codex-dialogue-bridge#install-in-codex">Install alpha.6</a><a href="https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose">Tell us what carried over — or what you had to explain again</a></div>
+<p class="afterword">Local Codex · Python 3.11+ · Git. First setup uses the network. This page works offline; its links open external pages only when selected.</p>
+<footer>MIT · Dialogue Bridge · This is a walkthrough of recorded excerpts, not a live AI session or a desktop screen recording.</footer>
+</main>
+<script>
+const buttons = Array.from(document.querySelectorAll('[data-stage]'));
+buttons.forEach(button => button.addEventListener('click', () => {
+  const selected = button.dataset.stage;
+  buttons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  document.querySelectorAll('.scene').forEach(scene => { scene.hidden = scene.id !== 'stage-' + selected; });
+}));
+</script>
+</body>
+</html>
