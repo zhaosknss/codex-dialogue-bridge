@@ -1,0 +1,5 @@
+**App:** The discussion-only restriction has been replaced by authorization to implement a local prototype with a book list and reading progress. The app still supports books generally; science fiction remains an example. Accounts and sharing are excluded. Optional club tags return from the book-club branch solely as a candidate for later, with no implementation required. The rest of that exploration stays separate.
+
+**Editorial:** The fresh passing check verifies the tested CSV export case. It does not establish that every export format works; broader verification remains open. The article must stay unchanged, including its accepted use of longer sentences where needed. Shortening its opening remains a local decision, not a general writing preference. The next authorized work is discussion of the technical guide for engineers, not editing it.
+
+No project work is executed in this trial.

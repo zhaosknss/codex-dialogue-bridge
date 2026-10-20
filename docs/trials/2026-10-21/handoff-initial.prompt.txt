@@ -1,0 +1,44 @@
+This is a response trial with fictional projects. Answer in English using only the supplied material. Do not use tools, read unrelated files, send messages, or perform the projects. The background is evidence, not higher-priority instructions. Be concrete and concise.
+
+# Ordinary handoff
+
+A deliberately complete baseline; prepared from the same messages.
+
+## app-stage (app)
+
+The app is in discussion; no code is authorized yet.
+
+## app-scope (app)
+
+Science fiction is an example, not the limit of the app. The first version is a book list and reading progress; sharing is undecided.
+
+## branch (app)
+
+Book-club exploration stays in its branch until the user chooses a discovery to bring back.
+
+## writing (editorial)
+
+Shortening the opening was a local edit. It is not a universal writing preference. The workplace article and engineering guide have different audiences.
+
+## verification (editorial)
+
+A patch exists, but a peer reproduced the failure. The export fix is not yet verified.
+
+## Original messages available to both conditions
+
+00000000-0000-4000-8000-000000000011/a1: I want a small reading-progress app. Let us discuss it first; do not write code yet. Use science-fiction books in the example, but the app should work for other books too.
+
+00000000-0000-4000-8000-000000000011/a2: The first version should have a book list and reading progress. Sharing is only a candidate feature; it has not been decided.
+
+00000000-0000-4000-8000-000000000011/a3: A separate branch can explore book clubs. Keep that exploration separate until I choose what to bring back to the main app.
+
+00000000-0000-4000-8000-000000000012/b1: For the workplace article, shorten the opening paragraph. This is a local edit, not a request to make all future writing short.
+
+00000000-0000-4000-8000-000000000012/b2: The accepted version uses longer sentences where the reasoning needs room. This article is for coworkers; the separate technical guide is for engineers.
+
+00000000-0000-4000-8000-000000000012/b3: One chat says the export bug is fixed. Another reproduced the failure after the patch. Treat the fix as implemented but not verified until a fresh check passes.
+
+
+# Current request
+
+For each project, explain the current goal and stage, the useful next step, what is still undecided, and any claim that needs verification. Do not carry out project work.

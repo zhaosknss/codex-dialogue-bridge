@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-21",
+  "fictional_sources": true,
+  "conditions": [
+    "complete ordinary handoff",
+    "actual alpha.6 Context exports"
+  ],
+  "design": "Two conditions x two independent phases. Four fresh model responses. No tools requested.",
+  "equal_information": "Both conditions receive every original message and the same later corrections. The baseline is not intentionally weakened.",
+  "initial_checks": [
+    "discussion does not authorize coding",
+    "science fiction remains an example",
+    "sharing remains undecided",
+    "branch exploration is not merged automatically",
+    "local shortening is not a permanent preference",
+    "patch is not verified while reproduction fails"
+  ],
+  "update_checks": [
+    "local prototype is now authorized",
+    "accounts and sharing remain excluded",
+    "club tags remain a candidate",
+    "the workplace article stays unchanged",
+    "the engineering guide is discussion only",
+    "CSV success does not verify all formats"
+  ],
+  "limitations": [
+    "One response per condition and phase; no statistical inference.",
+    "Understanding entries were coordinator-written, not autonomously extracted.",
+    "History transport uses a labeled fictional adapter, not live Codex chats.",
+    "This is a component-level response comparison, not a GUI onboarding or native-memory benchmark.",
+    "No claim about total feedback reduction or token savings."
+  ],
+  "storage_observations": {
+    "revision": 1,
+    "needs_review_after_update": true,
+    "initial_quotes_checked_by_real_plugin": true
+  }
+}

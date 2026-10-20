@@ -1,0 +1,19 @@
+{
+  "case": "bridge-update",
+  "exit_code": 0,
+  "seconds": 13.093,
+  "usage": [
+    {
+      "input_tokens": 19232,
+      "cached_input_tokens": 15104,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 239,
+      "reasoning_output_tokens": 0
+    }
+  ],
+  "tool_items": [],
+  "model_override": null,
+  "configuration": "CLI defaults with user config and project documents excluded; existing normal authentication.",
+  "ephemeral": true,
+  "response_exists": true
+}

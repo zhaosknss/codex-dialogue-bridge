@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-21",
+  "assessment": "Manual review by the coordinating model against the protocol fixed before responses were run.",
+  "independent_judge": false,
+  "initial": {
+    "handoff": [true, true, true, true, true, true],
+    "bridge": [true, true, true, true, true, true]
+  },
+  "update": {
+    "handoff": [true, true, true, true, true, true],
+    "bridge": [true, true, true, true, true, true]
+  },
+  "totals_per_condition": {"handoff": {"passed": 12, "checked": 12}, "bridge": {"passed": 12, "checked": 12}},
+  "conclusion": "Both conditions preserved the selected boundaries. This small response trial establishes no understanding-quality advantage for Dialogue Bridge over a complete handoff.",
+  "operational_scope": "Real alpha.6 context storage, quote validation and changed-source marking were used with fictional history transport. Entries were prepared by the coordinator. The response subjects did not perform history retrieval or use the plugin themselves.",
+  "model_runtime": "codex-cli 0.163.0-alpha.10.2, fresh ephemeral runs, default model with no explicit override. Effective server-selected model ID was not captured.",
+  "not_measured": ["autonomous first-use extraction", "GUI onboarding", "native memory comparison", "user feedback count", "complete workflow time", "reliable token savings", "independent original-chat participation"],
+  "all_response_runs_used_tools": false,
+  "model_response_count": 4,
+  "reruns_or_discarded_responses": 0
+}

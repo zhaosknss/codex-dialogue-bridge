@@ -1,0 +1,17 @@
+{
+  "assessment.json": "7bf6a397dec144a76338e8a37060399f98aed95ce8dba9b75c264cdaed439b44",
+  "bridge-initial.prompt.txt": "5564370f86225004ca9d74fcfefc58f393a7be7096046b31f3858835385c7780",
+  "bridge-initial.receipt.json": "21701ac1ff1999d62a7f5ecb5971f90bd31f36640af5384658ae7b71a947e20f",
+  "bridge-initial.response.md": "fe8eed1053b68c5d09f4c4ba116b2f40c13cd99f5784378aa949a79fb3065772",
+  "bridge-update.prompt.txt": "7aab678f8339ceeb4d7e374ad301c59d0ff3825edf705a34167e2437f6f32842",
+  "bridge-update.receipt.json": "95db8f2a7d32bb7ed33b866e109262e8dd8a47b5fb0b0ae7f366fc4aa6c0bac1",
+  "bridge-update.response.md": "5b2636313d491ed942fa7e016fcc8ac0fd6a372d7227d7ff408208b09a4c9457",
+  "handoff-initial.prompt.txt": "f42f419ecb96a2be4529947ecda0e85b529924a92b391d45c313a6046e1263d9",
+  "handoff-initial.receipt.json": "3c85719bb886957554d23610951ec9a886d3e9791c276927c58aba262e749b9a",
+  "handoff-initial.response.md": "0243cd73517b466d528be0950b3b0710037991b291bfd346459a64620e18e85b",
+  "handoff-update.prompt.txt": "9923328bc1b16298fea3d67807e817df20164c2e43ec3cb5eb667324288a591b",
+  "handoff-update.receipt.json": "bcdbe11d5238b4824ecd54dfa34d7258c5e15add86e68480a3d3d3b98eb473aa",
+  "handoff-update.response.md": "c80a2a178f4b6c64be6584afc3b45a95fc47674465d7949265787647b3684ccb",
+  "input-hashes.json": "d0afe1728c42ea152dfb802fe4d56efe85d991c43dd630ce6707afc5d9c57a1a",
+  "protocol.json": "d40f2e1fbf7392bad8a6351ea460eb9d8acbdc41e65aee4f4bdca5c971b1ef62"
+}
