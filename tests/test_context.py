@@ -147,7 +147,7 @@ class ContextTests(unittest.TestCase):
         registry.register("Fictional writing background", self.context.archive.root)
         registry.bind("Fictional writing background", C, ["story"])
         location, scopes = registry.resolve(actor=C)
-        self.assertEqual(location, self.context.archive.root)
+        self.assertTrue(location.samefile(self.context.archive.root))
         self.assertEqual(scopes, ["story"])
         self.assertNotIn(C, self.context.archive.threads)
         self.assertEqual(self.context.get(scopes=scopes)["entries"][0]["key"], "exploration")
@@ -313,7 +313,7 @@ class ContextTests(unittest.TestCase):
         self.context = Context(self.root / "moved")
         registry = Registry(self.root / "new-machine")
         registry.register("Fictional writing background", self.context.archive.root)
-        self.assertEqual(registry.resolve(name="Fictional writing background")[0], self.root / "moved")
+        self.assertTrue(registry.resolve(name="Fictional writing background")[0].samefile(self.root / "moved"))
         self.assertEqual(self.context.get()["entries"][0]["sources"][0]["quote"], "我没有说做，只是先让你整理。")
 
     def test_cli_saved_name_and_new_chat_binding_work_without_a_source_membership(self):

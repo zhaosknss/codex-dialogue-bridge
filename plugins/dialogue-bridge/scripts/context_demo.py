@@ -58,7 +58,7 @@ def run(directory):
             turn("a2", "Now carry out the requested work.")]), A)
         checks = {
             "new_reader_does_not_become_source": C not in context.archive.threads,
-            "saved_name_resolves_for_reader": registry.resolve(actor=C)[0] == context.archive.root,
+            "saved_name_resolves_for_reader": registry.resolve(actor=C)[0].samefile(context.archive.root),
             "original_evidence_retained": context.get()["entries"][0]["sources"][0]["quote"] == "Discuss first",
             "revision_history_preserved": context.ledger.snapshot(at_revision=1).state["understanding"]["entries"][0]["text"] == "Respect exploration in context.",
             "old_retry_does_not_undo_revision": replay["replayed"] and context.ledger.revision == 2,
