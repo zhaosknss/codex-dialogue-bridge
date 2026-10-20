@@ -1,1 +1,2 @@
-* text=auto eol=lf
+# Preserve the original captured bytes so the published SHA-256 values remain valid.
+docs/trials/** -text
