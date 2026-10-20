@@ -30,3 +30,5 @@ jobs:
         run: python -B -m unittest discover -s tests -v
       - name: Run the fictional collaboration example
         run: python -B plugins/dialogue-bridge/scripts/demo.py --directory local-data/ci-demo
+      - name: Run the fictional saved-background example
+        run: python -B plugins/dialogue-bridge/scripts/context_demo.py --directory local-data/ci-context-demo

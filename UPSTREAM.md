@@ -26,6 +26,20 @@ Checked 2026-10-20. This prototype does not vendor third-party source code.
 
 ## References, not integrated dependencies
 
+- [Honcho architecture](https://github.com/plastic-labs/honcho/blob/ce56c3e8e07f33ffcade58809282de102b36ce56/docs/v3/documentation/core-concepts/architecture.mdx),
+  commit `ce56c3e8e07f33ffcade58809282de102b36ce56`, root AGPL-3.0 license checked.
+  Reference for cross-session understanding, attributed messages and targeted
+  retrieval. No Honcho code, service, SDK or prompts are bundled.
+- [Hindsight mental models](https://github.com/vectorize-io/hindsight/blob/87a305e646d60d4ff7f57a7aab7a0cc7017c8de3/skills/hindsight-docs/references/developer/api/mental-models.md),
+  commit `87a305e646d60d4ff7f57a7aab7a0cc7017c8de3`, root MIT license checked.
+  Reference for evidence-backed current understanding, delta updates and full
+  reconsideration. Our whole-snapshot revision storage and boundary-turn history
+  refresh are newly authored, not a copy of Hindsight's block-operation engine.
+- [ECC observer](https://github.com/affaan-m/ECC/blob/6f1881aeafa3c48f7b603cc4be4b2e4e70daad59/skills/continuous-learning-v2/agents/observer.md),
+  commit `6f1881aeafa3c48f7b603cc4be4b2e4e70daad59`, root MIT license checked.
+  Reference for using corrections/examples with project attribution. We do not
+  copy its observer, background Claude invocation, hooks, confidence formula or
+  automatic promotion of project patterns to global rules.
 - [Maestro group chat](https://github.com/RunMaestro/Maestro/blob/995372b50c784bdf2893e4710c5e9288dae10c17/docs/group-chat.md),
   commit `995372b50c784bdf2893e4710c5e9288dae10c17`, root AGPL-3.0 license checked.
   Reference for persistent participants, routing relevant context, and handling

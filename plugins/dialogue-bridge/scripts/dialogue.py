@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 from pathlib import Path
 import sys
 
@@ -14,7 +15,8 @@ from dialogue_bridge.rpc import ReadOnlyCodex
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--workspace", required=True, help="Private per-project data directory")
+    parser.add_argument("--workspace", help="Private data directory; saved-context commands can use --name or this chat's binding")
+    parser.add_argument("--name", help="Reusable private background name (context commands)")
     parser.add_argument("--core-path", help="Optional agent-state-core source checkout, instead of an installed package")
     commands = parser.add_subparsers(dest="command", required=True)
     init = commands.add_parser("init")
@@ -48,11 +50,37 @@ def main(argv=None):
     note = commands.add_parser("note")
     note.add_argument("--id", required=True)
     note.add_argument("--participant")
+    listing = commands.add_parser("context-list", help="List saved backgrounds, optionally matching an exact set of source links")
+    listing.add_argument("--thread", action="append", help="Match this exact source set; repeat for each supplied chat link")
+    for name in ("context-init", "context-save", "context-source"):
+        command = commands.add_parser(name)
+        command.add_argument("--input", required=True, help="UTF-8 JSON prepared by the skill")
+    commands.add_parser("context-register", help="Register a portable context folder on this machine")
+    commands.add_parser("context-overview", help="See source scopes, index coverage and history samples")
+    refresh = commands.add_parser("context-sync", help="Index selected histories, then refresh new turns and the saved boundary")
+    refresh.add_argument("--full", action="store_true", help="Audit the complete history, including older edits")
+    changes = commands.add_parser("context-changes")
+    changes.add_argument("--after-change", type=int)
+    changes.add_argument("--limit", type=int, default=20)
+    changes.add_argument("--chars", type=int, default=6000)
+    for name in ("context-open", "context-show"):
+        command = commands.add_parser(name)
+        command.add_argument("--scope", action="append", help="Selected project scopes; shared entries are also included")
+        command.add_argument("--query", help="Optional literal terms over curated understanding")
+        command.add_argument("--key", help="Read a particular understanding entry")
+        command.add_argument("--chars", type=int, default=12000)
     args = parser.parse_args(argv)
     if args.core_path:
         sys.path.insert(0, str(Path(args.core_path).resolve()))
     archive = None
     try:
+        if args.command.startswith("context-"):
+            from dialogue_bridge.context import run_context
+            result = run_context(args)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+        if not args.workspace:
+            raise ValueError("This collaboration command requires --workspace")
         if args.command in ("start", "record", "inbox", "note"):
             from dialogue_bridge.notes import Notes, require_core
             require_core()  # Fail before creating or opening a collaboration directory.
@@ -92,7 +120,7 @@ def main(argv=None):
                 notes.close()
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
-    except (OSError, ValueError, RuntimeError, KeyError, TimeoutError) as exc:
+    except (OSError, ValueError, RuntimeError, KeyError, TimeoutError, sqlite3.Error) as exc:
         print(json.dumps({"error": type(exc).__name__, "message": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 1
     finally:

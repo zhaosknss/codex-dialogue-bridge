@@ -56,6 +56,15 @@ class Archive:
                 sha256 TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS message_order ON messages(thread_id, seq);
+            CREATE TABLE IF NOT EXISTS archive_turns (
+                thread_id TEXT NOT NULL, turn_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
+                digest TEXT NOT NULL, non_text_inputs INTEGER NOT NULL,
+                PRIMARY KEY(thread_id, turn_id)
+            );
+            CREATE TABLE IF NOT EXISTS history_changes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, thread_id TEXT NOT NULL,
+                ref TEXT NOT NULL, kind TEXT NOT NULL, sha256 TEXT
+            );
         """)
 
     def close(self):
@@ -73,42 +82,118 @@ class Archive:
         meta = client.metadata(ident)
         counts = {"turns": 0, "messages": 0, "non_text_inputs": 0}
         with self.db:
+            before = self._hashes(ident)
             self.db.execute("DELETE FROM messages WHERE thread_id=?", (ident,))
+            self.db.execute("DELETE FROM archive_turns WHERE thread_id=?", (ident,))
             seen_turns = set()
             for page in client.pages(ident):
                 for turn in page:
                     if turn["id"] in seen_turns:
                         raise ValueError("Repeated turn during paging; cannot claim a complete scan")
                     seen_turns.add(turn["id"])
-                    if turn.get("itemsView") not in (None, "full") or "items" not in turn:
-                        raise ValueError("Server did not return full turn items")
                     counts["turns"] += 1
-                    for item in turn["items"]:
-                        kind = item["type"]
-                        if kind == "userMessage":
-                            parts = item.get("content", [])
-                            text = "\n".join(x["text"] for x in parts if x.get("type") == "text")
-                            counts["non_text_inputs"] += sum(x.get("type") != "text" for x in parts)
-                            role = "user"
-                        elif kind == "agentMessage":
-                            text = item.get("text", "")
-                            role = "assistant"
-                        else:
-                            continue
-                        if not text:
-                            continue
-                        ref = f"{ident}/{turn['id']}/{item['id']}"
-                        self.db.execute("INSERT INTO messages VALUES (?,?,?,?,?,?,?,?,?,?)", (
-                            ref, ident, turn["id"], item["id"], counts["messages"], role,
-                            item.get("phase"), text, text.casefold(),
-                            hashlib.sha256(text.encode("utf-8")).hexdigest(),
-                        ))
-                        counts["messages"] += 1
+                    added, non_text = self._store_turn(ident, turn, counts["turns"], counts["messages"])
+                    counts["messages"] += added
+                    counts["non_text_inputs"] += non_text
             self.db.execute("INSERT OR REPLACE INTO threads VALUES (?,?,?,?,?,?,?,?,?)", (
                 ident, meta.get("name"), meta.get("cwd"), json.dumps(meta.get("status")),
                 started, now(), counts["turns"], counts["messages"], counts["non_text_inputs"],
             ))
+            self._log_changes(ident, before)
         return {"thread_id": ident, **counts, "coverage": "persisted user/assistant text; excludes tool output, reasoning and attachment contents; not an atomic snapshot of a running chat"}
+
+    def _hashes(self, ident):
+        return dict(self.db.execute("SELECT ref, sha256 FROM messages WHERE thread_id=?", (ident,)))
+
+    def _log_changes(self, ident, before):
+        after = self._hashes(ident)
+        for ref in sorted(before.keys() | after.keys()):
+            if before.get(ref) != after.get(ref):
+                kind = "removed" if ref not in after else "updated" if ref in before else "added"
+                self.db.execute("INSERT INTO history_changes(thread_id, ref, kind, sha256) VALUES (?,?,?,?)",
+                                (ident, ref, kind, after.get(ref)))
+
+    @staticmethod
+    def _text_items(turn):
+        if turn.get("itemsView") not in (None, "full") or not isinstance(turn.get("items"), list):
+            raise ValueError("Server did not return full turn items")
+        rows, non_text = [], 0
+        for item in turn["items"]:
+            if item["type"] == "userMessage":
+                parts = item.get("content", [])
+                text = "\n".join(x["text"] for x in parts if x.get("type") == "text")
+                non_text += sum(x.get("type") != "text" for x in parts)
+                role = "user"
+            elif item["type"] == "agentMessage":
+                text, role = item.get("text", ""), "assistant"
+            else:
+                continue
+            if text:
+                rows.append((item["id"], role, item.get("phase"), text))
+        return rows, non_text
+
+    def _store_turn(self, ident, turn, ordinal, seq):
+        rows, non_text = self._text_items(turn)
+        for offset, (item_id, role, phase, text) in enumerate(rows):
+            self.db.execute("INSERT INTO messages VALUES (?,?,?,?,?,?,?,?,?,?)", (
+                f"{ident}/{turn['id']}/{item_id}", ident, turn["id"], item_id, seq + offset,
+                role, phase, text, text.casefold(), hashlib.sha256(text.encode("utf-8")).hexdigest()))
+        digest = hashlib.sha256(json.dumps([rows, non_text], ensure_ascii=False).encode()).hexdigest()
+        self.db.execute("INSERT INTO archive_turns VALUES (?,?,?,?,?)",
+                        (ident, turn["id"], ordinal, digest, non_text))
+        return len(rows), non_text
+
+    def refresh(self, client, ident, *, full=False):
+        """Read new turns and re-read the last saved turn, including appended items.
+
+        A disappeared boundary (e.g. reverted history) forces a complete rescan.
+        Edits before that boundary require an explicit full refresh.
+        """
+        ident = self.selected(ident)
+        anchor = self.db.execute("SELECT * FROM archive_turns WHERE thread_id=? ORDER BY ordinal DESC LIMIT 1",
+                                 (ident,)).fetchone()
+        if full or anchor is None or not hasattr(client, "recent_pages"):
+            return {**self.sync(client, ident), "mode": "full"}
+        started, meta, pending, seen, found = now(), client.metadata(ident), [], set(), False
+        received_turns = 0
+        for page in client.recent_pages(ident):
+            received_turns += len(page)
+            for turn in page:
+                if turn["id"] in seen:
+                    raise ValueError("Repeated turn during paging; coverage is incomplete")
+                seen.add(turn["id"])
+                self._text_items(turn)
+                pending.append(turn)
+                if turn["id"] == anchor["turn_id"]:
+                    found = True
+                    break
+            if found:
+                break
+        if not found:
+            return {**self.sync(client, ident), "mode": "full_boundary_missing"}
+        with self.db:
+            # A second writer must not move our boundary while the read was in flight.
+            self.db.execute("BEGIN IMMEDIATE")
+            latest = self.db.execute("SELECT turn_id, digest FROM archive_turns WHERE thread_id=? ORDER BY ordinal DESC LIMIT 1",
+                                     (ident,)).fetchone()
+            if latest is None or tuple(latest) != (anchor["turn_id"], anchor["digest"]):
+                raise ValueError("History index changed during refresh; retry")
+            before = self._hashes(ident)
+            self.db.execute("DELETE FROM messages WHERE thread_id=? AND turn_id=?", (ident, anchor["turn_id"]))
+            self.db.execute("DELETE FROM archive_turns WHERE thread_id=? AND turn_id=?", (ident, anchor["turn_id"]))
+            seq = self.db.execute("SELECT COALESCE(MAX(seq)+1,0) FROM messages WHERE thread_id=?", (ident,)).fetchone()[0]
+            for offset, turn in enumerate(reversed(pending)):
+                added, _ = self._store_turn(ident, turn, anchor["ordinal"] + offset, seq)
+                seq += added
+            count, non_text = self.db.execute("SELECT COUNT(*), COALESCE(SUM(non_text_inputs),0) FROM archive_turns WHERE thread_id=?", (ident,)).fetchone()
+            self.db.execute("INSERT OR REPLACE INTO threads VALUES (?,?,?,?,?,?,?,?,?)",
+                            (ident, meta.get("name"), meta.get("cwd"), json.dumps(meta.get("status")),
+                             started, now(), count, seq, non_text))
+            self._log_changes(ident, before)
+        return {"thread_id": ident, "mode": "incremental", "fetched_turns": received_turns,
+                "checked_turns": len(pending),
+                "turns": count, "messages": seq,
+                "coverage": "new turns plus the last saved turn; earlier edits require full refresh; not an atomic desktop snapshot"}
 
     def status(self):
         rows = {row["id"]: dict(row) for row in self.db.execute("SELECT * FROM threads")}

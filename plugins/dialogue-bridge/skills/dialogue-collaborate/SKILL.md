@@ -1,9 +1,28 @@
 ---
 name: dialogue-collaborate
-description: Revisit selected existing Codex conversations, compare their accumulated understanding, exchange sourced corrections, and continue each conversation with relevant updates. Use for cross-chat drift, repeated background explanations, or joint review; a simple current-chat recap needs no setup.
+description: Understand the supplied Codex chat links when Dialogue Bridge is mentioned, even without an additional request. Reuse sourced, revisable background in a new chat, or compare existing chats when requested. Use for repeated explanations, cross-chat drift and joint review; a simple current-chat recap needs no setup.
 ---
 
 # Dialogue collaboration
+
+When the user mentions Dialogue Bridge and supplies `codex://threads/` links with
+no further request, default to understanding those selected conversations in this
+chat. Link order does not matter. A focus such as "了解写法" or "聊一个新方向"
+guides retrieval; it is optional. Do not require a saved name, a handoff document,
+an extra command or a choice of modes. Use the continuation reference below to
+match an existing background or prepare it internally, then briefly explain the
+useful understanding and any material uncertainty. With links alone, stop there;
+do not execute unfinished source tasks or invite the original chats to respond.
+
+When the user wants a new chat to understand prior work, writing choices, examples
+or the way they have been collaborating, use [saved background and continuation](references/continuation.md).
+That mode separates source chats from the new reader and can reuse a saved name.
+Read that reference instead of setting up a group exchange. The user need not
+prepare handoff documents, index data or specify which memory component to use.
+
+When the user wants the original chats themselves to compare views and contribute,
+continue with the exchange workflow below. These modes share history retrieval
+and evidence checks; neither requires a fixed debate or a new chat per step.
 
 Help existing conversations benefit from what the others learned. Preserve each
 conversation's own purpose and accumulated context. Another conversation can
