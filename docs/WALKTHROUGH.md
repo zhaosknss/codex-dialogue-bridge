@@ -3,8 +3,9 @@
 A short example of what Dialogue Bridge is for. Source messages are fictional;
 response excerpts below come from the [recorded response trial](COMPARISON.md).
 
-For a visual version, download [walkthrough.html](walkthrough.html) and open it
+For a visual version, [download the interactive walkthrough](https://github.com/zhaosknss/codex-dialogue-bridge/releases/download/v0.1.0-alpha.6/dialogue-bridge-walkthrough.html) and open it
 in your browser. It works offline and contains recorded excerpts, not a live AI.
+The [HTML source](walkthrough.html) is available in this repository.
 
 ![A later correction beside the recorded response](assets/walkthrough.jpg)
 
