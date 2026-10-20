@@ -44,7 +44,12 @@ Run `context-list --thread <LINK_1> --thread <LINK_2>` to find exact source-set
 matches, independent of link order or repetitions. Listings include source scopes
 and labels without loading full histories or the core. If one relevant background
 matches, reuse its returned name, directory and runtime; refresh source changes
-and revise understanding when needed before claiming it is current. If several
+with `--name <NAME> context-open --refresh`. This combines source refresh, the
+current understanding and this reader's binding. If understanding exists, start
+with the returned entries and key index; do not also load an overview and the
+same full snapshot again. `needs_review` includes a bounded `changes` page when
+sources changed: review it and continue with `context-changes` if needed, then
+revise affected understanding before claiming it is current. If several
 match, inspect their purpose and entries; ask only if the difference materially
 changes the task. If none matches, prepare the requested set internally, choosing
 a descriptive private name and folder. Never widen to a saved superset or reuse
@@ -69,18 +74,30 @@ even if several chats have the same cwd. Prepare a UTF-8 input file:
 
 ```text
 dialogue.py --workspace <PRIVATE_FOLDER> --name <SAVED_NAME> context-init --input <FILE>
-dialogue.py --name <SAVED_NAME> context-sync
-dialogue.py --name <SAVED_NAME> context-overview
+dialogue.py --name <SAVED_NAME> context-open --refresh
 ```
 
-The first scan indexes persisted user/assistant text across the selected history,
-not just recent turns. Overviews sample user messages across that index; samples
+With no saved understanding yet, this returns an overview after the first scan,
+ready for the host to interpret and save. The scan indexes persisted user/assistant
+text across the selected history, not just recent turns. Overviews sample user
+messages across that index; samples
 are orientation, not a complete account. Search distinct relevant formulations
 using the existing `search` command with the returned workspace, then `read`
 original messages and neighbors. Recover formative corrections and accepted or
 rejected examples, not only the latest summary. Follow relevant project entry
 documents when current state depends on files. An inaccurate document is a claim
 to reconcile with original context and newer evidence, not automatic authority.
+
+For history searches, `--limit` is 1..30 and `--chars` is a total excerpt budget of
+1..20000. Start with focused results and expand for a concrete gap. Select project
+files using the user's current purpose and actual entry/index files; several source
+chats can share a cwd without sharing a direction. Use file search or an index to
+confirm a referenced path before reading it, rather than guessing a draft filename.
+Read current state and relevant examples/code as needed, not the whole directory.
+Project reading is supplied by the host's file tools; it is not an automatic file
+index. Understanding links alone does not authorize editing shared project rules,
+business files or native memory. Keep the reusable understanding in its private
+folder so another task receives it only when it loads that background.
 
 Distinguish the user's statements, assistant interpretations, explored ideas and
 confirmed decisions. Similar repeated messages or inherited branch history are
@@ -123,12 +140,14 @@ reverse or remove an old interpretation. Do not append rules indefinitely.
 ## Continue naturally in the new chat
 
 ```text
-dialogue.py --name <SAVED_NAME> context-open
+dialogue.py --name <SAVED_NAME> context-open --refresh
 ```
 
 This binds only this new chat to the source group; it does not add the chat as a
 source or message the old chats. Use `--scope <PROJECT>` when only that project
-is relevant; shared entries remain included. `context-show` reuses the binding.
+is relevant; shared entries remain included. If it was already opened and refreshed
+in this turn, use that result rather than opening it again. `context-show` reuses
+the binding for a particular entry or a different scope/budget without syncing.
 Its `entry_index`, `--key`, optional literal `--query` and `--chars` help retrieve
 only useful entries. A zero literal match is not proof no understanding applies.
 If entries were omitted by the budget, fetch relevant keys rather than assuming

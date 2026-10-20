@@ -6,11 +6,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from test_bridge import A, B, C, History, PLUGIN, turn, user
-from dialogue_bridge.context import Context, Registry
+from dialogue_bridge.context import Context, Registry, run_context
 from dialogue_bridge.rpc import RpcError
 
 
@@ -18,6 +19,18 @@ class RecentHistory(History):
     def recent_pages(self, ident):
         # Each turn is a page so boundary tests detect accidental full rereads.
         for item in reversed([t for page in copy.deepcopy(self.data) for t in page]):
+            yield [item]
+
+
+class SelectedHistory(RecentHistory):
+    def pages(self, ident):
+        if ident == B:
+            yield [turn("b1", user("b", "Published is not an ideal example."))]
+        else:
+            yield from super().pages(ident)
+
+    def recent_pages(self, ident):
+        for item in reversed([t for page in self.pages(ident) for t in page]):
             yield [item]
 
 
@@ -46,6 +59,87 @@ class ContextTests(unittest.TestCase):
                                "sources": [{"ref": self.ref, "quote": "我没有说做，只是先让你整理。"}]}]}
         result.update(changes)
         return result
+
+    def context_args(self, command="context-open", **changes):
+        values = dict(command=command, name="Fictional writing background", workspace=None,
+                      scope=None, query=None, key=None, chars=12000, refresh=True, full=False)
+        values.update(changes)
+        return SimpleNamespace(**values)
+
+    def test_refresh_and_open_reuses_current_entries_without_an_overview_or_rebinding_sources(self):
+        self.context.save(self.payload(), actor=C)
+        home = self.root / "combined-home"
+        Registry(home).register("Fictional writing background", self.context.archive.root)
+        with patch.dict(os.environ, {"DIALOGUE_BRIDGE_HOME": str(home), "CODEX_THREAD_ID": C}), \
+             patch("dialogue_bridge.rpc.ReadOnlyCodex") as transport, \
+             patch.object(Context, "overview", side_effect=AssertionError("Do not reload samples for existing understanding")):
+            transport.return_value.__enter__.return_value = SelectedHistory()
+            result = run_context(self.context_args())
+        self.assertEqual(result["entries"][0]["key"], "exploration")
+        self.assertFalse(result["needs_review"])
+        self.assertEqual(result["bound_to"], C)
+        self.assertTrue(all(u["mode"] == "incremental" for u in result["refresh"]))
+        self.assertNotIn("changes", result)
+        self.assertNotIn(C, self.context.archive.threads)
+
+    def test_refresh_and_open_exposes_new_evidence_with_the_saved_understanding(self):
+        self.context.save(self.payload(), actor=C)
+        home = self.root / "changed-home"
+        Registry(home).register("Fictional writing background", self.context.archive.root)
+        history = SelectedHistory([*History().data, [turn("t3", user("new", "The previous interpretation needs revision."))]])
+        with patch.dict(os.environ, {"DIALOGUE_BRIDGE_HOME": str(home), "CODEX_THREAD_ID": C}), \
+             patch("dialogue_bridge.rpc.ReadOnlyCodex") as transport:
+            transport.return_value.__enter__.return_value = history
+            result = run_context(self.context_args())
+        self.assertTrue(result["needs_review"])
+        self.assertEqual(result["entries"][0]["key"], "exploration")
+        self.assertEqual(result["changes"]["changes"][0]["kind"], "added")
+
+    def test_refresh_failure_does_not_bind_the_reader_or_replace_understanding(self):
+        self.context.save(self.payload(), actor=C)
+        home = self.root / "failed-home"
+        registry = Registry(home)
+        registry.register("Fictional writing background", self.context.archive.root)
+        with patch.dict(os.environ, {"DIALOGUE_BRIDGE_HOME": str(home), "CODEX_THREAD_ID": C}), \
+             patch("dialogue_bridge.rpc.ReadOnlyCodex") as transport:
+            transport.return_value.__enter__.side_effect = RpcError("Unavailable source")
+            with self.assertRaises(RpcError):
+                run_context(self.context_args())
+        with self.assertRaisesRegex(ValueError, "Select a saved background"):
+            registry.resolve(actor=C)
+        self.assertEqual(self.context.ledger.revision, 1)
+
+    def test_invalid_reader_cannot_refresh_sources(self):
+        for actor in ("", "not-a-chat"):
+            with patch.dict(os.environ, {"CODEX_THREAD_ID": actor}), \
+                 patch("dialogue_bridge.rpc.ReadOnlyCodex") as transport:
+                with self.assertRaises(ValueError):
+                    run_context(self.context_args(workspace=str(self.context.archive.root)))
+                transport.assert_not_called()
+
+    def test_empty_registry_can_initialize_read_interpret_and_reopen_without_prepared_background(self):
+        home = self.root / "first-use-home"
+        selection = self.root / "selection.json"
+        selection.write_text(json.dumps({"sources": self.context.config["sources"]}), encoding="utf-8")
+        with patch.dict(os.environ, {"DIALOGUE_BRIDGE_HOME": str(home), "CODEX_THREAD_ID": C}), \
+             patch("dialogue_bridge.rpc.ReadOnlyCodex") as transport:
+            transport.return_value.__enter__.return_value = SelectedHistory()
+            self.assertEqual(Registry(home).list(), [])
+            created = run_context(self.context_args("context-init", input=str(selection)))
+            self.assertFalse(created["coverage"]["all_sources_indexed"])
+            first = run_context(self.context_args())
+            self.assertFalse(first["has_understanding"])
+            self.assertTrue(first["coverage"]["all_sources_indexed"])
+            self.assertEqual(len(first["sources"]), 2)
+            payload = self.payload(coverage_token=first["coverage"]["token"])
+            payload_file = self.root / "understanding.json"
+            payload_file.write_text(json.dumps(payload), encoding="utf-8")
+            run_context(self.context_args("context-save", input=str(payload_file)))
+            reopened = run_context(self.context_args())
+        self.assertEqual(reopened["revision"], 1)
+        self.assertEqual(reopened["entries"][0]["key"], "exploration")
+        self.assertEqual({source["thread"] for source in first["sources"]}, {A, B})
+        self.assertFalse(reopened["needs_review"])
 
     def test_a_new_reader_binds_without_becoming_a_source_or_peer(self):
         self.context.save(self.payload(), actor=C)

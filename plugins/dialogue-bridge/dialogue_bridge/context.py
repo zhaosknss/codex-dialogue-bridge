@@ -343,6 +343,13 @@ class Context:
                 "retrieval": "literal matching over curated entries; the host chooses conceptual relevance and can search original history"}
 
 
+def refresh_context(context, *, full=False):
+    from .rpc import ReadOnlyCodex
+    with ReadOnlyCodex() as client:
+        return [context.archive.refresh(client, source["thread"], full=full)
+                for source in context.config["sources"]]
+
+
 def run_context(args):
     """CLI adapter. No model calls, chat messages or native-memory edits."""
     registry = Registry()
@@ -367,6 +374,10 @@ def run_context(args):
             return context.overview()
         finally:
             context.close()
+    if command == "context-open":
+        if not actor:
+            raise ValueError("Open from a Codex chat with CODEX_THREAD_ID; context-show supports offline reading")
+        thread_id(actor)  # Reject an invalid reader before refreshing history or changing a binding.
     directory, bound_scopes = registry.resolve(name=args.name, directory=args.workspace, actor=actor)
     context = Context(directory)
     try:
@@ -374,11 +385,7 @@ def run_context(args):
             registry.register(context.config["name"], directory)
             return {"registered": context.config["name"], "directory": str(directory.resolve())}
         if command == "context-sync":
-            from .rpc import ReadOnlyCodex
-            with ReadOnlyCodex() as client:
-                updates = [context.archive.refresh(client, source["thread"], full=args.full)
-                           for source in context.config["sources"]]
-            return {"updates": updates, "coverage": context.coverage()}
+            return {"updates": refresh_context(context, full=args.full), "coverage": context.coverage()}
         if command == "context-overview":
             return context.overview()
         if command == "context-changes":
@@ -387,11 +394,14 @@ def run_context(args):
             return context.save(json.loads(Path(args.input).read_text(encoding="utf-8-sig")))
         if command == "context-source":
             return context.add_source(json.loads(Path(args.input).read_text(encoding="utf-8-sig")))
+        refreshed = refresh_context(context) if command == "context-open" and args.refresh else None
         scopes = args.scope if args.scope is not None else bound_scopes
         result = context.get(scopes=scopes, query=args.query, key=args.key, chars=args.chars)
         if command == "context-open":
-            if not actor:
-                raise ValueError("Open from a Codex chat with CODEX_THREAD_ID; context-show supports offline reading")
+            if refreshed is not None:
+                result["refresh"] = refreshed
+                if result.get("needs_review"):
+                    result["changes"] = context.changes(limit=8, chars=2400)
             registry.register(context.config["name"], directory)
             registry.bind(context.config["name"], actor, scopes)
             result["bound_to"] = thread_id(actor)

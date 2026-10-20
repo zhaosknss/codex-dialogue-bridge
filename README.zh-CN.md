@@ -6,6 +6,9 @@
 
 [English](README.md) · [安装](#安装到-codex) · [运行示例](#先试一个小例子) · [反馈感受](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
 
+安装后，新建本地聊天，选中 `@Dialogue Bridge`，贴上对话链接即可。默认先理解背景，
+也可以补一句这次的重点。你不用先整理交接文档。
+
 ## 我们集中解决什么
 
 一个对话记得为什么改过方向，另一个已经试过某条路并发现问题，第三个准备接着做，
@@ -22,9 +25,9 @@ Dialogue Bridge 希望让这些**已经有各自积累的独立对话**，按需
 
 ## 早期版本，欢迎拿真实问题试试
 
-当前源码增加 alpha.6 本地试用：新聊天里选择 `@Dialogue Bridge`，贴上来源对话链接，
+alpha.6 增加背景接续：新聊天里选择 `@Dialogue Bridge`，贴上来源对话链接，
 默认就先理解这些背景；也可以补一句这次要重点了解什么。后来发现理解不对，可以继续修订。
-下面的公开 alpha.5 安装标签尚不包含这组新功能。
+首次由插件准备私有来源索引，已有背景则合并刷新与读取，按需要继续修订理解。
 
 目前已有历史检索、逐字来源核对、共享贡献、修订和收件箱接续。我们已经用两个已有
 Codex 对话做过实际交流，把彼此的发现用于具体核对，也由此修复过插件问题。
@@ -41,21 +44,19 @@ Codex 对话做过实际交流，把彼此的发现用于具体核对，也由�
 第一次准备依赖需要联网。
 
 ```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.5
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.6
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
-在新对话里说，例如：
-
-> 用 Dialogue Bridge，让这几个已有对话一起复盘目前的理解和遗漏，各自说明哪些发现
-> 适合带回自己的任务：〈对话链接〉。
+新建本地对话，输入 `@` 选中 Dialogue Bridge，贴上 `codex://threads/…` 链接。
+可以补一句想了解的重点，或接下来要讨论的事。
 
 也可以显式使用 `$dialogue-collaborate`。Skill 会处理私有目录、脚本位置和记录格式，
 随包准备脚本可以把固定依赖装到项目自己的隔离环境里。
 
 本仓库就是可添加的插件来源。Git 仓库来源的说明见 [OpenAI 插件指南](https://developers.openai.com/plugins/build/plugins)。
 
-## 新对话沿用背景（alpha.6 试用）
+## 新对话沿用背景
 
 在新建的本地 Codex 聊天里，输入 `@` 并选中已安装的 Dialogue Bridge，再附上对话链接：
 
@@ -70,8 +71,13 @@ codex://threads/<对话二的 UUID>
 取背景组名称或输入脚本命令；索引、查找已有背景和保存由 Skill 内部处理。
 
 流程负责取出相关理解和具体例子，必要时回查原话。同一组链接会查找已有背景并补读更新，
-也可以直接提已保存的名称。新聊天不必加入旧讨论组，也不用每次都让所有原对话回应。
+再按需要补读原文和项目文件。也可以直接提已保存的名称。新聊天不必加入旧讨论组，
+也不用每次都让所有原对话回应。
 不同项目保留适用范围，后来的一次纠正不会自动成为永久规则；理解背景不会自行执行旧任务。
+
+来源对话只被读取，不会因此收到消息或被唤醒。保存的理解加载到当前读者，不广播给其他
+对话，也不写进全局记忆或项目指令。其他对话需要这份背景时可以加载，安装插件本身不会
+把这些内容注入所有聊天。
 
 首次索引选定对话已保存的用户／AI 文字；之后读取新增轮次，并重查上次最后一轮，
 避免漏掉同一轮后补的消息。更早的历史编辑可以主动完整复核。模型负责理解与取舍，
@@ -148,7 +154,10 @@ Linux/macOS 的环境解释器位于 `./local-data/bridge-env/bin/python`。
 python -B -m unittest discover -s tests -v
 ```
 
-程序检查使用虚构材料。理解质量、反馈次数和总 Token 成本，希望通过实际试用及同题比较继续了解。
+62 项程序检查使用虚构材料。安装版已在真实新聊天中调用、复用背景并阅读项目文件；
+另用空背景库和新隔离环境，完成真实来源索引、形成带原话依据的理解、保存与增量重开。
+其中首次理解由协调模型形成，不是独立模型盲测。理解质量、反馈次数和总 Token 成本，
+仍需通过实际试用及同题比较了解。
 
 [Maestro](https://github.com/RunMaestro/Maestro)、[Epistemic Protocols](https://github.com/jongwony/epistemic-protocols)
 与 [October Bus](https://github.com/october-dev/october-bus) 提供了编排、理解协议和协作传输方面的参考。

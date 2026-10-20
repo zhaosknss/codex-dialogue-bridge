@@ -29,7 +29,7 @@ conversation's own purpose and accumulated context. Another conversation can
 correct the coordinator. Retrieval, disagreement, revision and continuation are
 parts of one workflow, not a requirement to run a fixed debate every time.
 
-This development version provides stored-history reads and a local shared inbox.
+This early version provides stored-history reads and a local shared inbox.
 The bundled CLI does **not** wake or send prompts to another chat. Distinguish
 your analysis of another chat's history from that original chat actually responding.
 Original chats can participate when the user invokes this skill there, in the same
@@ -44,6 +44,13 @@ Recover the goal and recent corrections from available context before choosing
 what to retrieve. A new suggestion may clarify, narrow, or explore an alternative;
 it does not automatically replace an earlier decision. Reconsider old conclusions
 using original evidence, later corrections and actual results together.
+
+Resolve what a proposed change affects before recommending a new direction.
+"Different", "another approach" or "换个方向" can refer to the subject, method,
+expression or scope. Preserve what the user has kept; when evidence is insufficient,
+state a provisional interpretation rather than silently choosing one dimension.
+Ask only if the difference materially changes the next action. Do not turn a local
+example or correction into a permanent rule for the user.
 
 Accept an ordinary request such as "Let these chats compare what we currently
 understand"; the user need not prepare UUIDs, a transcript summary or record JSON.

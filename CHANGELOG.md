@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-alpha.6 — 2026-10-20 (local trial)
+## 0.1.0-alpha.6 — 2026-10-20
 
 - Mention the plugin with chat links to default to understanding their background.
   Exact source-set lookup reuses saved context without asking for a group name.
@@ -13,6 +13,12 @@
   can be audited with an explicit full refresh.
 - One existing skill routes between background continuation and original-chat
   exchange. No new service or model SDK dependency; the core pin is unchanged.
+- Refresh and open saved understanding with one operation, including a bounded
+  source-change page when review is needed. An unprepared group starts with a full
+  index and overview; an existing group reuses current entries without resampling.
+- Retrieval help exposes actual limits; project files are located through entry
+  documents and file search. Ambiguous changes remain provisional until grounded
+  in the user's purpose. Background loading does not alter source conversations.
 - Fictional saved-background example. Model judgment is still supplied by the host;
   these checks do not establish fewer corrections or better writing.
 

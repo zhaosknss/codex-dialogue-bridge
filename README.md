@@ -7,6 +7,10 @@ or help existing chats compare notes and carry discoveries back into their work.
 
 [中文说明](README.zh-CN.md) · [Install](#install-in-codex) · [Try an example](#try-a-small-example) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
 
+After installing, start a new local chat, select `@Dialogue Bridge`, and paste the
+conversation links. With links alone it first understands the background; add a
+request if you want a particular focus. You do not have to write a handoff document.
+
 ## The problem we focus on
 
 One chat remembers why a direction changed. Another has already tried an approach
@@ -26,11 +30,11 @@ or reviews from different perspectives. The shared mechanism is the same:
 
 ## Early preview: try it and help shape it
 
-This checkout adds the alpha.6 local trial: mention Dialogue Bridge in a new chat
+Alpha.6 adds background continuation: mention Dialogue Bridge in a new chat
 and supply chat links. With no extra request, it defaults to understanding that
 background. You can add a focus or discuss the actual task without another handoff.
-Later corrections can revise that understanding. The published alpha.5 tag below
-does not yet include these new commands.
+Later corrections can revise that understanding. Existing backgrounds can refresh
+and open in one operation; first-time use prepares a private source index.
 
 The current version provides history search, exact source quotes, shared
 contributions, revisions and saved inbox positions. We have used it with two
@@ -47,14 +51,12 @@ Requires a local Codex environment with plugin marketplace commands, Python 3.11
 and Git. First-time dependency setup needs Internet access.
 
 ```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.5
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.6
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
-Open a new conversation and ask, for example:
-
-> Use Dialogue Bridge to revisit these existing chats, compare what they currently
-> understand, and identify what each should do next: <chat links>.
+Open a new local conversation, type `@`, select Dialogue Bridge, and paste your
+`codex://threads/…` links. Optionally say what you want to understand or do next.
 
 You can also explicitly invoke `$dialogue-collaborate`. The skill handles the
 private data directory, script paths and record format. Its bundled setup helper
@@ -63,7 +65,7 @@ can prepare the pinned dependency in a private environment.
 The [OpenAI plugin guide](https://developers.openai.com/plugins/build/plugins)
 describes Git-backed marketplaces. This repository is the installation source.
 
-## Saved background for a new chat (alpha.6 trial)
+## Saved background for a new chat
 
 In a new local Codex chat, type `@`, select the installed Dialogue Bridge plugin,
 and add the source conversation links:
@@ -79,12 +81,19 @@ understanding and waits for your next task. Optionally add a focus, such as
 "Understand how we choose topics and revise drafts." No handoff document, saved
 group name or script command is required from the user.
 
-The skill handles the private index, original examples, understanding and revisions.
+The skill handles first-time preparation, the private index, original examples,
+understanding and revisions. For saved background it retrieves current entries
+and source changes together, then expands relevant evidence or project files.
 The same source set can reuse saved background and refresh changes; returning
 users can also refer to a saved name. New readers do not have to join the original
 group or ask every source chat to respond. Project scopes remain visible; a
 correction is not silently turned into a permanent rule. Understanding background
 does not execute unfinished tasks from source chats.
+
+Source chats are read without waking or messaging them. Saved understanding is
+loaded into the reader, not broadcast to other chats or written into global memory
+or project instructions. Another conversation can load that same private background
+when relevant; installing the plugin alone does not inject its contents there.
 
 The first scan indexes selected persisted user/assistant text. Later refreshes
 read new turns plus the last saved turn; a full refresh can audit earlier edits.
@@ -171,9 +180,13 @@ After preparing the environment, use its Python to run:
 python -B -m unittest discover -s tests -v
 ```
 
-The tests use fictional data. Local trials cover original-chat exchange and
-installed scripts; comparative improvements in understanding, feedback count and
-total token cost are still questions we want real use to help answer.
+The 62 tests use fictional data. An installed new-chat trial exercised the plugin
+mention, saved background and project-file reads. A separate empty-registry check
+created a private environment, indexed selected real histories, saved a sourced
+interpretation and reopened it incrementally. That interpretation was formed by
+the coordinating model, not a blind independent-agent evaluation. Comparative
+improvements in understanding, feedback count and total token cost remain questions
+for actual use and matched-task comparisons.
 
 See [contributing](CONTRIBUTING.md), [dependency and design references](UPSTREAM.md)
 and the [changelog](CHANGELOG.md). MIT License.

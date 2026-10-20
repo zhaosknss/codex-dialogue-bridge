@@ -33,8 +33,8 @@ def main(argv=None):
     search = commands.add_parser("search")
     search.add_argument("--query", required=True)
     search.add_argument("--role", choices=["user", "assistant"])
-    search.add_argument("--limit", type=int, default=8)
-    search.add_argument("--chars", type=int, default=6000)
+    search.add_argument("--limit", type=int, default=8, help="Maximum hits, 1..30 (default: 8)")
+    search.add_argument("--chars", type=int, default=6000, help="Total excerpt characters, 1..20000 (default: 6000)")
     read = commands.add_parser("read")
     read.add_argument("--ref", required=True)
     read.add_argument("--offset", type=int, default=0)
@@ -65,6 +65,8 @@ def main(argv=None):
     changes.add_argument("--chars", type=int, default=6000)
     for name in ("context-open", "context-show"):
         command = commands.add_parser(name)
+        if name == "context-open":
+            command.add_argument("--refresh", action="store_true", help="Refresh selected history and open understanding in one operation")
         command.add_argument("--scope", action="append", help="Selected project scopes; shared entries are also included")
         command.add_argument("--query", help="Optional literal terms over curated understanding")
         command.add_argument("--key", help="Read a particular understanding entry")
