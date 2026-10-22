@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.7 — 2026-10-22
+
+- Opt-in `--compact` CLI output reduces repeated index metadata and formatting;
+  original excerpts, coverage gaps, source warnings and continuation controls stay
+  available. Full diagnostic output remains the default.
+- `context-revise` updates selected understanding entries or removes explicit keys
+  while retaining unrelated entries. It uses the existing quote, scope, revision
+  and human-document checks and preserves historical snapshots and retry safety.
+- Continuation guidance reuses already opened results, avoids an unrelated group
+  listing after an empty exact match, and completes requested private revisions
+  with explicit source attribution. It does not enroll readers automatically.
+
 ## 0.1.0-alpha.6 — 2026-10-20
 
 - Mention the plugin with chat links to default to understanding their background.

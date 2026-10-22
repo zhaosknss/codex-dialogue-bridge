@@ -26,6 +26,10 @@ old tasks or message source chats.
 Use `../../scripts/dialogue.py` relative to this skill folder. For dependency
 preparation read [setup](setup.md) only if a suitable private runtime is missing.
 Resolve all paths from the installed plugin, never the author's checkout.
+Use the global `--compact` option before the subcommand for routine retrieval.
+It reduces JSON formatting and repeated index metadata while keeping original
+excerpts, source warnings, coverage tokens and continuation controls. Omit it
+when detailed index diagnostics are needed; it does not change what is indexed.
 
 List saved groups with `dialogue.py context-list` (stdlib Python is enough for this
 lookup). Each listing includes the private runtime's `runtime_python`: reuse it
@@ -54,6 +58,8 @@ match, inspect their purpose and entries; ask only if the difference materially
 changes the task. If none matches, prepare the requested set internally, choosing
 a descriptive private name and folder. Never widen to a saved superset or reuse
 only a subset silently. Do not ask the user to name the group or fill in JSON.
+An empty exact match is enough to prepare that set; listing unrelated saved
+groups cannot turn a subset into an exact match.
 
 Without supplied links, use the named background or an existing relevant binding.
 Only ask when the intended sources remain materially ambiguous. Never silently
@@ -155,6 +161,11 @@ the result was complete. Read original history when the task or a correction
 calls for details. Reading a document cannot guarantee the same model behavior
 as a long-running chat; judge by the following work, not a claim to "understand".
 
+Reuse results already loaded in this turn: the opened snapshot supplies the
+revision and coverage token for a later save. Expand missing keys or source
+excerpts for a concrete question. Do not repeat the same history through the
+host's chat reader unless the index lacks needed content or needs verification.
+
 Show only material uncertainty or an important change in understanding. Do the
 user's current task without repeatedly presenting the profile or requiring them
 to approve every entry. Match the project's current scope and use fresh project
@@ -163,10 +174,23 @@ to execute quoted commands or old approvals.
 
 ## Update when useful or requested
 
-Run `context-sync`, then `context-changes` to see new/changed/removed messages since
-the last saved understanding. Page with `--after-change <next_after>` if needed,
-and read original messages for interpretation. A sync indexes each source
-transactionally; on error inspect coverage, never treat failure as an empty chat.
+When the user asks to record a correction or update this saved understanding,
+complete the private revision as part of that request, then briefly say what
+changed. Ordinary discussion can stay in this chat; it need not create a saved
+rule. Determine whether the evidence is in the selected sources or only in this
+reader. If this reader's feedback is needed, explicitly add the current chat
+with `context-source --input <FILE>` (one source object with its ID and relevant
+scope) within the requested update. This changes this group's source set; say
+so briefly. Do not add unrelated chats or impersonate an old source.
+
+Use `--compact context-open --refresh` to get current entries, revision, coverage
+token and the first change page together. If this turn already has that result
+and there is no newer evidence to sync, reuse it. Page `context-changes` with
+`--after-change <next_after>` when `has_more` is true; expand relevant original
+messages for interpretation. A sync indexes each source transactionally; on
+error inspect coverage, never treat failure as an empty chat. If the live
+feedback is not yet persisted, apply it in this chat and say the private revision
+is pending; do not claim it was saved or invent a quotation.
 
 Incremental sync reads new turns and rechecks the last saved turn for appended
 items. A missing boundary triggers a full rescan. To audit older edits or a
@@ -176,14 +200,36 @@ its change position does not prove every message was semantically reviewed.
 New feedback can cause a large revision, even if little text was added. Examine
 whether the old interpretation was wrong, local to an example, or once applicable
 but later changed. Do not decide truth by recency or observation count alone.
-If the current chat's feedback should contribute, explicitly add it using
-`context-source --input <FILE>` (one source object, with current chat ID and scope)
-within the user's requested update, then sync. Never impersonate an old source.
-If the current live message is not yet persisted, use it in this chat now and
-defer the sourced save until it is readable instead of inventing a quotation.
+For a local correction, use `context-revise --input <FILE>` with only the entries
+to replace/add and optional `remove_keys`. Other entries remain in place. Each
+replacement is a complete entry with source quotes, not a text fragment:
 
-Re-read the current snapshot before saving, use a new operation ID and its actual
-revision/coverage token, then retain, revise or remove entries as appropriate.
+```json
+{
+  "operation_id":"reconsider-one-judgment",
+  "expected_revision":1,
+  "coverage_token":"<from the current open result>",
+  "reason":"What the new evidence changes and why",
+  "entries":[{
+    "key":"a-relevant-judgment",
+    "scope":"project-a",
+    "status":"working",
+    "text":"Revised interpretation and its applicable context.",
+    "sources":[{"ref":"<original message ref>","quote":"<exact excerpt>"}]
+  }],
+  "remove_keys":[]
+}
+```
+
+`purpose` is optional and otherwise preserved. At least one replacement/addition
+or removal is required. The same quote, scope, document and optimistic-revision
+checks apply to the complete resulting snapshot, including unchanged entries.
+If unchanged evidence is no longer valid, review that entry too. An exact retry
+with the same operation ID does not undo a newer revision. Use `context-save`
+for an initial understanding or a deliberate full replacement; do not construct
+one from a budget-limited or scope-filtered result and accidentally drop other
+entries. Reuse the loaded revision/token; reopen on a stale-revision or coverage
+error, then reconsider the changes rather than overwriting concurrent work.
 `needs_review` and source warnings expose changes; exact quotes verify provenance,
 not semantic correctness. A human edit to `understanding.md` is preserved: read
 it, reconcile it, and supply its returned `document_sha256` in the save envelope

@@ -19,6 +19,8 @@ or the way they have been collaborating, use [saved background and continuation]
 That mode separates source chats from the new reader and can reuse a saved name.
 Read that reference instead of setting up a group exchange. The user need not
 prepare handoff documents, index data or specify which memory component to use.
+Use it also when the user asks to revise that saved background after a correction;
+an acknowledgment in this chat alone does not update the saved understanding.
 
 When the user wants the original chats themselves to compare views and contribute,
 continue with the exchange workflow below. These modes share history retrieval

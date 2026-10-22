@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dialogue_bridge.archive import Archive
 from dialogue_bridge.rpc import ReadOnlyCodex
+from dialogue_bridge.output import compact_result
 
 
 def main(argv=None):
@@ -18,6 +19,7 @@ def main(argv=None):
     parser.add_argument("--workspace", help="Private data directory; saved-context commands can use --name or this chat's binding")
     parser.add_argument("--name", help="Reusable private background name (context commands)")
     parser.add_argument("--core-path", help="Optional agent-state-core source checkout, instead of an installed package")
+    parser.add_argument("--compact", action="store_true", help="Lean JSON: omit repeated history metadata, retain evidence, warnings and continuation controls")
     commands = parser.add_subparsers(dest="command", required=True)
     init = commands.add_parser("init")
     init.add_argument("--project", required=True)
@@ -52,7 +54,7 @@ def main(argv=None):
     note.add_argument("--participant")
     listing = commands.add_parser("context-list", help="List saved backgrounds, optionally matching an exact set of source links")
     listing.add_argument("--thread", action="append", help="Match this exact source set; repeat for each supplied chat link")
-    for name in ("context-init", "context-save", "context-source"):
+    for name in ("context-init", "context-save", "context-revise", "context-source"):
         command = commands.add_parser(name)
         command.add_argument("--input", required=True, help="UTF-8 JSON prepared by the skill")
     commands.add_parser("context-register", help="Register a portable context folder on this machine")
@@ -79,7 +81,8 @@ def main(argv=None):
         if args.command.startswith("context-"):
             from dialogue_bridge.context import run_context
             result = run_context(args)
-            print(json.dumps(result, ensure_ascii=False, indent=2))
+            print(json.dumps(compact_result(args.command, result) if args.compact else result,
+                             ensure_ascii=False, indent=None if args.compact else 2))
             return 0
         if not args.workspace:
             raise ValueError("This collaboration command requires --workspace")
@@ -120,7 +123,8 @@ def main(argv=None):
                     result = notes.fetch(args.id, participant=args.participant)
             finally:
                 notes.close()
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(json.dumps(compact_result(args.command, result) if args.compact else result,
+                         ensure_ascii=False, indent=None if args.compact else 2))
         return 0
     except (OSError, ValueError, RuntimeError, KeyError, TimeoutError, sqlite3.Error) as exc:
         print(json.dumps({"error": type(exc).__name__, "message": str(exc)}, ensure_ascii=False), file=sys.stderr)
