@@ -292,6 +292,44 @@ class Context:
         return {"revision": result.revision, "replayed": False, "document": str(document.resolve()),
                 "meaning": "Saved a sourced working interpretation; quote validation does not prove its semantic correctness"}
 
+    def revise(self, payload, *, actor=None):
+        """Replace selected keys without making the caller reconstruct other entries.
+
+        Materialize against the requested historical revision, so an exact retry
+        uses the same save envelope even after another revision has been saved.
+        The existing save path still checks coverage, quotes and document edits.
+        """
+        allowed = {"operation_id", "expected_revision", "coverage_token", "purpose", "reason",
+                   "entries", "remove_keys", "document_sha256"}
+        if not isinstance(payload, dict) or set(payload) - allowed:
+            raise ValueError("Unknown revision fields; use entries and optional remove_keys")
+        revision = payload.get("expected_revision")
+        if type(revision) is not int or not 1 <= revision <= self.ledger.revision:
+            raise ValueError("Read an existing understanding revision before revising it")
+        base = self.ledger.snapshot(at_revision=revision).state["understanding"]
+        edits, removed = payload.get("entries", []), payload.get("remove_keys", [])
+        if not isinstance(edits, list) or not isinstance(removed, list) or not (edits or removed):
+            raise ValueError("Provide entries to replace/add or remove_keys to remove")
+        keys = []
+        for entry in edits:
+            if not isinstance(entry, dict):
+                raise ValueError("Each revised entry must be an object")
+            keys.append(nonempty(entry.get("key"), "entry key", 120))
+        for key in removed:
+            nonempty(key, "removed key", 120)
+        if len(set(keys)) != len(keys) or len(set(removed)) != len(removed) or set(keys) & set(removed):
+            raise ValueError("Revision keys must be unique and cannot be both replaced and removed")
+        if set(removed) - {entry["key"] for entry in base["entries"]}:
+            raise ValueError("Cannot remove an unknown understanding key")
+        # Stored evidence has checked metadata; callers submit only original refs/quotes.
+        entries = {entry["key"]: {**entry, "sources": [
+            {"ref": source["ref"], "quote": source["quote"]} for source in entry["sources"]]}
+                   for entry in base["entries"] if entry["key"] not in removed}
+        entries.update((entry["key"], entry) for entry in edits)
+        envelope = {key: value for key, value in payload.items() if key != "remove_keys"}
+        envelope.update(purpose=payload.get("purpose", base["purpose"]), entries=list(entries.values()))
+        return self.save(envelope, actor=actor)
+
     def render(self, current, revision):
         if current is None:
             return ""
@@ -392,6 +430,8 @@ def run_context(args):
             return context.changes(after=args.after_change, limit=args.limit, chars=args.chars)
         if command == "context-save":
             return context.save(json.loads(Path(args.input).read_text(encoding="utf-8-sig")))
+        if command == "context-revise":
+            return context.revise(json.loads(Path(args.input).read_text(encoding="utf-8-sig")))
         if command == "context-source":
             return context.add_source(json.loads(Path(args.input).read_text(encoding="utf-8-sig")))
         refreshed = refresh_context(context) if command == "context-open" and args.refresh else None

@@ -32,7 +32,8 @@ or reviews from different perspectives. The shared mechanism is the same:
 
 ## Early preview: try it and help shape it
 
-Alpha.6 adds background continuation: mention Dialogue Bridge in a new chat
+Alpha.7 reduces repeated retrieval output and makes local understanding revisions
+easier. Mention Dialogue Bridge in a new chat
 and supply chat links. With no extra request, it defaults to understanding that
 background. You can add a focus or discuss the actual task without another handoff.
 Later corrections can revise that understanding. Existing backgrounds can refresh
@@ -53,7 +54,7 @@ Requires a local Codex environment with plugin marketplace commands, Python 3.11
 and Git. First-time dependency setup needs Internet access.
 
 ```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.6
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.7
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
@@ -96,6 +97,12 @@ Source chats are read without waking or messaging them. Saved understanding is
 loaded into the reader, not broadcast to other chats or written into global memory
 or project instructions. Another conversation can load that same private background
 when relevant; installing the plugin alone does not inject its contents there.
+
+Routine CLI retrieval can use `--compact` to reduce
+repeated index metadata. `context-revise` updates selected saved entries while
+retaining the others and their history. When you ask to save a correction, the
+skill checks its sources and revises that private background; feedback found only
+in the new chat requires explicitly adding that chat as a source.
 
 The first scan indexes selected persisted user/assistant text. Later refreshes
 read new turns plus the last saved turn; a full refresh can audit earlier edits.
@@ -182,7 +189,7 @@ After preparing the environment, use its Python to run:
 python -B -m unittest discover -s tests -v
 ```
 
-The 62 tests use fictional data. An installed new-chat trial exercised the plugin
+The tests use fictional data. An installed alpha.6 new-chat trial exercised the plugin
 mention, saved background and project-file reads. A separate empty-registry check
 created a private environment, indexed selected real histories, saved a sourced
 interpretation and reopened it incrementally. That interpretation was formed by

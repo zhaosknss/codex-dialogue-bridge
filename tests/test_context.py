@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from test_bridge import A, B, C, History, PLUGIN, turn, user
 from dialogue_bridge.context import Context, Registry, run_context
+from dialogue_bridge.output import compact_result
 from dialogue_bridge.rpc import RpcError
 
 
@@ -194,6 +195,123 @@ class ContextTests(unittest.TestCase):
         self.assertTrue(replay["replayed"])
         self.assertEqual(replay["current_revision"], 2)
         self.assertIn("later request", (self.context.archive.root / "understanding.md").read_text(encoding="utf-8"))
+
+    def test_local_revision_keeps_unrelated_entries_and_supports_explicit_removal(self):
+        initial = self.payload()
+        initial["entries"].append({"key": "research", "scope": "analysis", "text": "Treat this as provisional.",
+                                   "sources": [{"ref": f"{B}/b1/b", "quote": "not an ideal example"}]})
+        self.context.save(initial, actor=C)
+        before = self.context.snapshot()[1]["entries"][1]
+        revised = {**initial["entries"][0], "text": "Follow an explicit request within its scope."}
+        patch_data = {"operation_id": "local-revision", "expected_revision": 1,
+                      "coverage_token": self.context.coverage()["token"], "reason": "A local reconsideration",
+                      "entries": [revised]}
+        self.context.revise(patch_data, actor=C)
+        self.assertEqual(self.context.snapshot()[1]["entries"][1], before)
+        self.assertEqual(self.context.snapshot()[1]["entries"][0]["text"], revised["text"])
+        self.assertEqual(self.context.ledger.snapshot(at_revision=1).state["understanding"]["entries"][0]["text"],
+                         initial["entries"][0]["text"])
+        removal = {**patch_data, "operation_id": "remove", "expected_revision": 2,
+                   "entries": [], "remove_keys": ["exploration"]}
+        self.context.revise(removal, actor=C)
+        self.assertEqual(self.context.snapshot()[1]["entries"], [before])
+
+    def test_partial_revision_retry_after_another_update_cannot_undo_it(self):
+        self.context.save(self.payload(), actor=C)
+        patch_data = {"operation_id": "patch", "expected_revision": 1,
+                      "coverage_token": self.context.coverage()["token"], "reason": "Reconsider",
+                      "entries": [{**self.payload()["entries"][0], "text": "First revision"}]}
+        self.context.revise(patch_data, actor=C)
+        self.context.revise({**patch_data, "operation_id": "newer", "expected_revision": 2,
+                             "entries": [{**patch_data["entries"][0], "text": "Newer revision"}]}, actor=C)
+        document = (self.context.archive.root / "understanding.md").read_bytes()
+        replay = self.context.revise(patch_data, actor=C)
+        self.assertTrue(replay["replayed"])
+        self.assertEqual(replay["current_revision"], 3)
+        self.assertEqual((self.context.archive.root / "understanding.md").read_bytes(), document)
+        with self.assertRaisesRegex(ValueError, "different content"):
+            self.context.revise({**patch_data, "reason": "Changed retry"}, actor=C)
+        with self.assertRaisesRegex(ValueError, "current revision"):
+            self.context.revise({**patch_data, "operation_id": "stale"}, actor=C)
+
+    def test_local_revision_cannot_bypass_source_or_document_guards(self):
+        self.context.save(self.payload(), actor=C)
+        patch_data = {"operation_id": "guarded", "expected_revision": 1,
+                      "coverage_token": self.context.coverage()["token"], "reason": "Reconsider",
+                      "entries": [{**self.payload()["entries"][0], "text": "A revised interpretation"}]}
+        invented = copy.deepcopy(patch_data)
+        invented["entries"][0]["sources"][0]["quote"] = "An invented source"
+        with self.assertRaisesRegex(ValueError, "verbatim"):
+            self.context.revise(invented, actor=C)
+        document = self.context.archive.root / "understanding.md"
+        document.write_text("A human correction", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "document was edited"):
+            self.context.revise(patch_data, actor=C)
+        self.assertEqual(document.read_text(encoding="utf-8"), "A human correction")
+        self.context.archive.sync(RecentHistory([[turn("b2", user("b2", "New evidence"))]]), B)
+        with self.assertRaisesRegex(ValueError, "coverage"):
+            self.context.revise(patch_data, actor=C)
+        self.assertEqual(self.context.ledger.revision, 1)
+
+    def test_revision_rejects_ambiguous_keys_and_does_not_drop_changed_unrelated_evidence(self):
+        initial = self.payload()
+        initial["entries"].append({"key": "research", "scope": "analysis", "text": "Provisional research",
+                                   "sources": [{"ref": f"{B}/b1/b", "quote": "not an ideal example"}]})
+        self.context.save(initial, actor=C)
+        patch_data = {"operation_id": "invalid", "expected_revision": 1,
+                      "coverage_token": self.context.coverage()["token"], "reason": "Reconsider",
+                      "entries": [initial["entries"][0]]}
+        for extra in ({"remove_keys": ["unknown"]}, {"remove_keys": ["exploration"]},
+                      {"entries": patch_data["entries"] * 2}, {"expected_revision": True}, {"typo": 1}):
+            with self.assertRaises(ValueError):
+                self.context.revise({**patch_data, **extra}, actor=C)
+        self.context.archive.sync(RecentHistory([[turn("b1", user("b", "The original evidence was replaced."))]]), B)
+        patch_data["coverage_token"] = self.context.coverage()["token"]
+        with self.assertRaisesRegex(ValueError, "verbatim"):
+            self.context.revise(patch_data, actor=C)
+        self.assertEqual(self.context.ledger.revision, 1)
+
+    def test_compact_context_preserves_review_omission_and_document_controls(self):
+        self.context.save(self.payload(), actor=C)
+        self.context.archive.sync(RecentHistory([[turn("t2", user("m3", "Changed source"))]]), A)
+        (self.context.archive.root / "understanding.md").write_text("Human edit", encoding="utf-8")
+        for chars in (1, 12000):
+            full = self.context.get(chars=chars)
+            full["changes"] = self.context.changes(limit=1, chars=10)
+            lean = compact_result("context-open", full)
+            for key in ("entries", "entry_index", "omitted_entries", "needs_review", "changes",
+                        "document", "document_sha256", "document_edited", "revision"):
+                self.assertEqual(lean[key], full[key])
+            self.assertEqual(lean["coverage"]["token"], full["coverage"]["token"])
+            self.assertTrue(lean["needs_review"])
+            self.assertTrue(lean["document_edited"])
+            if chars > 1:
+                self.assertEqual(lean["entries"][0]["source_warnings"][0]["status"], "source_changed")
+
+    def test_cli_partial_revision_is_available_to_another_reader(self):
+        self.context.save(self.payload(), actor=C)
+        home = self.root / "revise-cli-home"
+        saved_name = self.context.config["name"]
+        Registry(home).register(saved_name, self.context.archive.root)
+        data = {"operation_id": "cli-revision", "expected_revision": 1,
+                "coverage_token": self.context.coverage()["token"], "reason": "User requested an update",
+                "entries": [{**self.payload()["entries"][0], "text": "Updated understanding"}]}
+        filename = self.root / "revision.json"
+        filename.write_text(json.dumps(data), encoding="utf-8-sig")
+        environment = {**os.environ, "DIALOGUE_BRIDGE_HOME": str(home), "CODEX_THREAD_ID": C}
+        cli = str(PLUGIN / "scripts/dialogue.py")
+        updated = subprocess.run([sys.executable, "-B", cli, "--name", saved_name, "--compact",
+                                  "context-revise", "--input", str(filename)],
+                                 env=environment, capture_output=True, encoding="utf-8")
+        self.assertEqual(updated.returncode, 0, updated.stderr)
+        self.assertEqual(json.loads(updated.stdout)["revision"], 2)
+        reader = "00000000-0000-4000-8000-000000000004"
+        opened = subprocess.run([sys.executable, "-B", cli, "--name", saved_name, "--compact", "context-open"],
+                                env={**environment, "CODEX_THREAD_ID": reader},
+                                capture_output=True, encoding="utf-8")
+        self.assertEqual(opened.returncode, 0, opened.stderr)
+        self.assertEqual(json.loads(opened.stdout)["entries"][0]["text"], "Updated understanding")
+        self.assertNotIn(reader, self.context.archive.threads)
 
     def test_stale_revision_and_changed_idempotent_input_are_rejected(self):
         old = self.payload()

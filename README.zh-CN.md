@@ -44,7 +44,7 @@ Codex 对话做过实际交流，把彼此的发现用于具体核对，也由�
 第一次准备依赖需要联网。
 
 ```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.6
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.7
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
@@ -154,7 +154,7 @@ Linux/macOS 的环境解释器位于 `./local-data/bridge-env/bin/python`。
 python -B -m unittest discover -s tests -v
 ```
 
-62 项程序检查使用虚构材料。安装版已在真实新聊天中调用、复用背景并阅读项目文件；
+70 项程序检查使用虚构材料。安装版已在真实新聊天中调用、复用背景并阅读项目文件；
 另用空背景库和新隔离环境，完成真实来源索引、形成带原话依据的理解、保存与增量重开。
 其中首次理解由协调模型形成，不是独立模型盲测。理解质量、反馈次数和总 Token 成本，
 仍需通过实际试用及同题比较了解。
