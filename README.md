@@ -110,6 +110,18 @@ codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
+If you already added this marketplace with a different fixed version, replace
+that named source before installing the new tag:
+
+```text
+codex plugin marketplace remove dialogue-bridge
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.1
+codex plugin add dialogue-bridge@dialogue-bridge
+```
+
+This replaces the installation source. Saved understanding spaces stay in their
+private directories outside the plugin cache. Use a new local chat after updating.
+
 For a local source checkout, use `codex plugin marketplace add .` from its root
 before the same plugin-add command.
 
