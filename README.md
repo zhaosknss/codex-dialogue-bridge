@@ -1,47 +1,49 @@
 # Dialogue Bridge
 
-**Continue useful understanding across independent chats.**
+**Carry understanding forward. Let each chat keep its own view.**
 
-A local Codex plugin for shared, sourced understanding that can change as the work
-develops. Each chat keeps its own interpretation and task; a common index helps
-it find relevant discoveries, original examples and corrections from other chats.
+A Codex plugin for carrying context, corrections, and useful discoveries across
+existing conversations. Find the original discussion, reuse what was worked out,
+and revise the understanding as your work develops.
 
-[How understanding works](docs/UNDERSTANDING.md) · [Try the fictional walkthrough](#try-the-fictional-walkthrough) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
+One chat remembers why the direction changed. Another has already tried an
+approach. Bridge connects that background through shared understanding, each
+chat's own working document, and original sources you can revisit.
 
-**0.2.0-alpha.1 is unreleased work in this checkout.** It adds a local runtime,
-shared and chat documents, per-entry review, MCP tools, lifecycle hooks, a private
-management page and portable bundles. The published alpha.7 installation is a
-separate legacy version; it does not contain these additions.
+[Install](#install-in-codex) · [How understanding works](docs/UNDERSTANDING.md) · [Try the walkthrough](#try-the-fictional-walkthrough) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
 
 ## Use it in ordinary conversation
 
-Select `@Dialogue Bridge` in a local Codex chat and paste the selected chat links:
+After installing, open a local Codex chat, select `@Dialogue Bridge`, and paste
+the conversations you want it to understand:
 
 ```text
 @Dialogue Bridge
 codex://threads/<FIRST_CHAT_UUID>
 codex://threads/<SECOND_CHAT_UUID>
+
+Understand why the direction changed and what matters for this discussion.
 ```
 
-Links alone mean "understand this background". Bridge briefly conveys what is
-useful and waits for your next task. You can add a focus, such as:
+The final sentence is optional. With links alone, Bridge first understands the
+selected background. You can then discuss your next task in ordinary language.
 
-```text
-Understand why the design changed, then help me discuss this new direction.
-```
-
-To continue collecting the selected chats as their work develops:
+To keep selected chats connected as their work develops:
 
 ```text
 Keep these chats connected. Let each maintain its own interpretation and bring
 useful findings back to its own work.
 ```
 
-You do not need to write a handoff document, fill in roles or prepare JSON.
-Opening the background as a reader does not automatically enroll that reader's
-future messages. A request to include the current chat can add it as a source.
-The selection stays private and separate from global Codex memory and project
-instructions.
+| When you want to… | Use Bridge to… |
+|---|---|
+| Continue a long discussion | Recover relevant context, decisions, corrections, and unresolved questions |
+| Revisit a misunderstanding | Read original examples and revise the affected understanding |
+| Compare work from different chats | Exchange sourced views while retaining different interpretations |
+| Reuse a discovery in another project | Consider its context while keeping the project's own goal |
+
+You do not need to write a handoff document, fill in roles, or prepare JSON.
+Opening background as a reader keeps future source enrollment a separate choice.
 
 ## What stays connected
 
@@ -96,17 +98,20 @@ an available host messaging channel and the user's authorization. A background
 worker is identified as its actual author, never as an absent original chat.
 Delivery, reading, reported adoption and verified subsequent work remain separate.
 
-## Install this unreleased checkout locally
+## Install in Codex
 
 Requires a local Codex environment with plugin marketplace support, Python 3.11+
 and Git. Dependency setup needs Internet access the first time.
 
-From this checkout's root:
+Install the current early release:
 
 ```text
-codex plugin marketplace add .
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.1
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
+
+For a local source checkout, use `codex plugin marketplace add .` from its root
+before the same plugin-add command.
 
 Then open a new local chat and select `@Dialogue Bridge`. First-use guidance can
 prepare the pinned dependency in an explicit private environment. You can also
@@ -124,16 +129,8 @@ Setup prints the environment's Python path. On Windows it is normally
 `./local-data/bridge-env/bin/python`. Keep the environment and understanding data
 outside the installed plugin cache so updates do not replace them.
 
-The previously published version can still be installed with:
-
-```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.7
-codex plugin add dialogue-bridge@dialogue-bridge
-```
-
-Those commands install **legacy alpha.7**, with its saved-background and shared
-record workflows. Existing `dialogue.py context-*`, history and note commands
-remain available in the new checkout; see the
+Existing alpha.7 backgrounds stay in their private directories. The earlier
+`dialogue.py context-*`, history, and note commands remain available; see the
 [legacy continuation guide](plugins/dialogue-bridge/skills/dialogue-collaborate/references/continuation.md).
 
 ## Open the private management page
@@ -202,8 +199,8 @@ python -B -m unittest discover -s tests -v
 
 Tests and demos use fictional data. The prior
 [information-matched response comparison](docs/COMPARISON.md) documents an earlier
-saved-background workflow and its limits; it is not validation of this unreleased
-runtime. Real connected use and matched comparisons are still needed to assess
+saved-background workflow and its limits; the current runtime is checked
+separately for storage and continuation behavior. Real connected use and matched comparisons are still needed to assess
 interpretation quality and how much coordination work this saves.
 
 Feedback can be simple: what you wanted, what happened, and which explanation or

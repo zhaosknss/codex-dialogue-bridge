@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0-alpha.1 — Unreleased
+## 0.2.0-alpha.1 — 2026-10-24
 
 - Shared understanding, independent chat documents and a unified private index,
   with per-entry dependencies that identify affected interpretations for review.
@@ -20,8 +20,9 @@
 - A fictional, model-free runtime walkthrough in an isolated temporary space.
   Alpha.7 history, saved-background and note commands remain supported.
 
-This version has not been published. Runtime protocol checks do not establish
-better understanding, actual replies from absent chats or verified later adoption.
+This early release adds the connected understanding workflow. Its protocol and
+storage checks are separate from understanding quality, original-chat replies,
+and adoption observed in subsequent work.
 
 ## 0.1.0-alpha.7 — 2026-10-22
 
