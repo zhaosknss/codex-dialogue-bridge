@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.0-alpha.1 — 2026-10-24
+
+- Shared understanding, independent chat documents and a unified private index,
+  with per-entry dependencies that identify affected interpretations for review.
+- The common `dialogue-understand` skill joins relevant shared context, each chat's
+  own view and original examples while preserving scope, disagreement and revisions.
+- One runtime backs `bridge_*` MCP tools, lifecycle hooks, the local management
+  page and file-based actions. Reader binding remains separate from source enrollment.
+- Persistent incremental collection jobs, saved maintenance settings and recovery
+  states. The active host model supplies interpretation by default; optional
+  background JSON workers require explicit configuration and opt-in.
+- Attributed shared proposals and preserved external document edits, with source
+  checks, revision checks and explicit review before adoption into shared entries.
+- Portable frozen bundles with SQLite snapshots, source evidence, document views,
+  integrity manifests and bounded, validated import into a new or empty directory.
+  Runtime settings, host bindings and worker commands are excluded. Restoring a
+  retained interpretation creates a new revision rather than erasing later history.
+- A fictional, model-free runtime walkthrough in an isolated temporary space.
+  Alpha.7 history, saved-background and note commands remain supported.
+
+This early release adds the connected understanding workflow. Its protocol and
+storage checks are separate from understanding quality, original-chat replies,
+and adoption observed in subsequent work.
+
 ## 0.1.0-alpha.7 — 2026-10-22
 
 - Opt-in `--compact` CLI output reduces repeated index metadata and formatting;

@@ -1,6 +1,6 @@
 # Dependency and design references
 
-Checked 2026-10-20. This prototype does not vendor third-party source code.
+Checked 2026-10-24. This local plugin does not vendor third-party source code.
 
 ## Actual dependency
 
@@ -58,6 +58,11 @@ exploration from decisions and letting another conversation challenge the
 coordinator. Public code contains fictional test messages, not private transcripts.
 
 ## Official integration contracts
+
+The understanding document engine, persistent queue, JSON worker adapter, MCP
+stdio server, private HTTP page, hooks and portable bundles are newly authored.
+They use the Python standard library and the same pinned core dependency above.
+No Honcho/Hindsight service or code is integrated by this update.
 
 - [App Server](https://learn.chatgpt.com/docs/app-server): stored-history paging
   differs from resuming a thread or starting a model turn.

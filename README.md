@@ -6,11 +6,13 @@ A Codex plugin for carrying context, corrections, and useful discoveries across
 existing conversations. Find the original discussion, reuse what was worked out,
 and revise the understanding as your work develops.
 
-You worked through an idea in one chat. Another has already tried an approach.
-A new conversation can build on both, with the original examples still available
-when a summary needs checking.
+One chat remembers why the direction changed. Another has already tried an
+approach. Bridge connects that background through shared understanding, each
+chat's own working document, and original sources you can revisit.
 
-[Install](#install-in-codex) · [See the walkthrough](docs/WALKTHROUGH.md) · [Try an example](#try-a-small-example) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
+[Install](#install-in-codex) · [How understanding works](docs/UNDERSTANDING.md) · [Try the walkthrough](#try-the-fictional-walkthrough) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
+
+## Use it in ordinary conversation
 
 After installing, open a local Codex chat, select `@Dialogue Bridge`, and paste
 the conversations you want it to understand:
@@ -26,186 +28,182 @@ Understand why the direction changed and what matters for this discussion.
 The final sentence is optional. With links alone, Bridge first understands the
 selected background. You can then discuss your next task in ordinary language.
 
-## The problem we focus on
+To keep selected chats connected as their work develops:
 
-Useful context often lives between conversations: why an idea was rejected,
-what a correction actually meant, which approach failed, or which question is
-still open. Moving to another chat can mean explaining all of that again.
-
-Dialogue Bridge gives selected, independent chats a way to reuse that context
-with its sources, compare interpretations, and bring discoveries back into
-their own work. A coordinator's reading can be challenged too. Different
-projects can consider one another's findings while keeping their own goals.
+```text
+Keep these chats connected. Let each maintain its own interpretation and bring
+useful findings back to its own work.
+```
 
 | When you want to… | Use Bridge to… |
 |---|---|
-| Continue a long discussion in a new chat | Recover relevant background, decisions, examples, and unresolved questions |
-| Revisit a misunderstanding | Check the original exchange and revise the affected understanding |
-| Compare work from different chats | Share findings with their sources and retain different interpretations |
-| Reuse a discovery in another project | Find its context and decide how it applies to the new work |
+| Continue a long discussion | Recover relevant context, decisions, corrections, and unresolved questions |
+| Revisit a misunderstanding | Read original examples and revise the affected understanding |
+| Compare work from different chats | Exchange sourced views while retaining different interpretations |
+| Reuse a discovery in another project | Consider its context while keeping the project's own goal |
 
-The same workflow can support product discussions, writing, research, project
-continuation, and reviews from different perspectives.
+You do not need to write a handoff document, fill in roles, or prepare JSON.
+Opening background as a reader keeps future source enrollment a separate choice.
 
-**Find original context → compare views → revise understanding → continue the work.**
+## What stays connected
+
+The shared understanding records goals, formative examples, corrections, scoped
+judgments and unresolved differences. Each chat's document records its own work,
+the shared entries it uses, its interpretation and what should happen next.
+The index joins these documents to their sources and dependency versions.
+
+When a shared entry changes, dependent chat documents are marked for review.
+An unrelated entry changing does not require every chat to rewrite its view.
+A chat can challenge the coordinator or retain a different interpretation.
+
+Understanding grows from actual examples and results. A newer message may correct
+an error, change a goal or describe a different situation; it does not automatically
+win because it is newer. Multiple AIs repeating one summary do not create multiple
+independent sources. Original text remains available when a summary needs checking.
+
+You can ask:
+
+```text
+That sounds too permanent. Revisit the examples and narrow the interpretation.
+```
+
+Corrections can become attributed proposals before they change shared entries.
+Edits to local documents are preserved for review rather than silently overwritten.
+Version checks protect concurrent work, and earlier interpretations remain available.
+
+## Collection, interpretation and actual participation
+
+The first collection indexes selected persisted user/assistant text. Later
+collections read new turns and recheck the previous boundary; a full refresh can
+audit earlier edits. Coverage and errors remain visible. Search opens exact
+source passages and neighboring messages; the current index uses literal matching.
+The model chooses relevant formulations and interprets what it retrieves.
+
+By default, the model in the active Codex chat forms and revises understanding
+through the common skill. Hooks prepare saved context and queue incremental
+collection. A running local service processes eligible collection jobs. There is
+no default background model silently generating new interpretations.
+
+Optional background interpretation requires an explicitly configured and enabled
+`model_command`. It is an executable argument list: the worker receives a prompt
+and evidence packet on stdin and returns a JSON object with `reason`, `entries`
+and `remove_keys` on stdout. It uses the configured account or local compute.
+Model and reasoning choices stay with the current host unless you request a change.
+The [runtime reference](plugins/dialogue-bridge/skills/dialogue-understand/references/runtime.md)
+describes the provider and action contracts.
+
+Stored history analysis and replies from the original chats are distinct. Pending
+contributions can be collected when a chat next checks in. Immediate requests need
+an available host messaging channel and the user's authorization. A background
+worker is identified as its actual author, never as an absent original chat.
+Delivery, reading, reported adoption and verified subsequent work remain separate.
 
 ## Install in Codex
 
-**Current public preview: alpha.7.** Requires a local Codex environment with
-plugin marketplace support, Python 3.11+, and Git. First-use dependency setup
-needs Internet access.
+Requires a local Codex environment with plugin marketplace support, Python 3.11+
+and Git. Dependency setup needs Internet access the first time.
+
+Install the current early release:
 
 ```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.1.0-alpha.7
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.1
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
-Open a new local conversation, type `@`, select Dialogue Bridge, and paste your
-`codex://threads/…` links. You can also invoke `$dialogue-collaborate`.
+For a local source checkout, use `codex plugin marketplace add .` from its root
+before the same plugin-add command.
 
-The skill handles the private source index, script paths, and working records.
-Its setup helper prepares the pinned dependency in a private environment. You
-do not need to write a handoff document, choose internal roles, or prepare JSON.
+Then open a new local chat and select `@Dialogue Bridge`. First-use guidance can
+prepare the pinned dependency in an explicit private environment. You can also
+invoke `$dialogue-collaborate` for source links or `$dialogue-understand` for an
+already connected space.
 
-See the [setup guide](plugins/dialogue-bridge/skills/dialogue-collaborate/references/setup.md)
-for first-use details and the [OpenAI plugin guide](https://developers.openai.com/plugins/build/plugins)
-for Git-backed marketplaces.
-
-## What you can use today
-
-- **Selected conversation history.** Index stored user/assistant text, search it,
-  and open exact passages with neighboring messages.
-- **Understanding you can revisit.** Save entries with original quotes, refresh
-  their sources, and revise selected entries while preserving earlier versions.
-- **Independent contributions.** Keep authors, recipients, sources, and revision
-  relationships when chats compare notes or question another interpretation.
-- **Continuation.** Reuse saved background in a new reader and track which shared
-  contributions each participating chat has processed.
-- **Private storage.** Keep archives, sources, and records in a local directory
-  separate from the plugin. Copy and register that background on another machine.
-
-The model interprets what matters. The software checks quotes, scope, versions,
-and storage. An exact quotation helps you inspect a judgment; later context can
-still change that judgment.
-
-## Saved background for a new chat
-
-Give Bridge the source links and, if useful, a focus:
+To prepare a checkout environment yourself:
 
 ```text
-Understand how we reached this design and which alternatives are still open.
-```
-
-First use prepares an index of the selected persisted text. Later refreshes read
-new turns and recheck the last saved turn. An explicit full refresh can audit
-earlier edits. Saved understanding and original passages remain available for
-corrections and a different reading of the same discussion.
-
-You can later say:
-
-```text
-That interpretation sounds too permanent. Revisit the example and narrow it
-to the situation we were discussing.
-```
-
-Relevant changes can revise the affected entries while unrelated entries stay
-intact. Feedback that exists only in the new reader can join shared evidence
-when that conversation is explicitly added as a source.
-
-Reading background leaves the source chats asleep. A new reader can use the
-selected material without joining the original group. Bridge keeps its private
-records separate from native Codex memory and project instructions; the current
-request determines what work to do next.
-
-See the [continuation guide](plugins/dialogue-bridge/skills/dialogue-collaborate/references/continuation.md)
-for the source, revision, and CLI contracts.
-
-## How the exchange works
-
-1. Select the existing conversations relevant to the question.
-2. Read original examples and corrections, then save a view with its evidence.
-3. Let participating chats compare, challenge, or revise their interpretations.
-4. Carry useful findings back into each chat's task and inspect what changes.
-
-Contributions can wait in the shared inbox for a chat's next check-in. Immediate
-requests to original chats use an available host messaging tool with the user's
-authorization. Reading history, storing a contribution, receiving a reply, and
-seeing the result used in later work are separate steps.
-
-A different interpretation can remain visible. The workflow does not require
-every conversation to agree or turn every correction into a permanent rule.
-
-## Try a small example
-
-From a checkout, prepare a private environment:
-
-```text
-git clone https://github.com/zhaosknss/codex-dialogue-bridge.git
-cd codex-dialogue-bridge
 python plugins/dialogue-bridge/scripts/setup.py --environment ./local-data/bridge-env
 ```
 
-Setup prints the environment's Python path. On Windows:
+Setup prints the environment's Python path. On Windows it is normally
+`./local-data/bridge-env/Scripts/python.exe`; on Linux/macOS,
+`./local-data/bridge-env/bin/python`. Keep the environment and understanding data
+outside the installed plugin cache so updates do not replace them.
+
+Existing alpha.7 backgrounds stay in their private directories. The earlier
+`dialogue.py context-*`, history, and note commands remain available; see the
+[legacy continuation guide](plugins/dialogue-bridge/skills/dialogue-collaborate/references/continuation.md).
+
+## Open the private management page
+
+From the checkout, use the prepared environment's Python. For example, on Windows:
 
 ```powershell
-./local-data/bridge-env/Scripts/python.exe plugins/dialogue-bridge/scripts/demo.py --directory ./local-data/demo
+./local-data/bridge-env/Scripts/python.exe plugins/dialogue-bridge/scripts/bridge_service.py serve
 ```
 
-On Linux/macOS, the environment interpreter is `./local-data/bridge-env/bin/python`.
-The fictional example demonstrates source retrieval, a peer correction, retained
-revisions, retry handling, and reading new records. It makes no model calls. Use
-a fresh data directory when repeating it.
+Open the printed local URL in your browser. The page provides an overview,
+understanding and activity views for sources, shared and chat documents,
+proposals, processing settings, jobs and migration. The URL includes a private
+access token; the server listens on loopback by default. Stop it with Ctrl+C.
+Use `--no-worker` when you want the page without processing queued work.
 
-For a saved-background example, use that Python from the plugin folder:
+The same runtime is exposed through `bridge_*` MCP tools and a file-based CLI.
+Skills handle these calls during normal conversation; users do not need to learn
+the internal action envelopes.
 
-```text
-python scripts/context_demo.py --directory <NEW_PRIVATE_DIRECTORY>
+The bundled lifecycle hooks target manually installed Codex desktop plugins.
+Codex asks you to review and trust their current definition before running them;
+the Skill and MCP tools can still be used without trusted hooks. The current
+hook-bearing package is for manual distribution. A future public-directory
+submission needs packaging that meets that directory's hook policy.
+[OpenAI packaging guidance](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks)
+
+Export keeps versioned understanding, indexed original evidence and allowlisted
+document views, including pending external edits. It excludes runtime settings,
+host bindings, worker commands and credential configuration files. Original source
+text stays intact in the private bundle. Import verifies its manifest, hashes,
+sizes, paths and databases before installing into a new or empty directory.
+Unavailable original chats leave frozen evidence readable; fresh collection still
+requires access to those chats. Restoring an earlier interpretation creates a new
+revision and preserves the intervening history.
+
+## Try the fictional walkthrough
+
+With the prepared environment, run:
+
+```powershell
+./local-data/bridge-env/Scripts/python.exe plugins/dialogue-bridge/scripts/understanding_demo.py
 ```
 
-Keep actual chat archives and databases outside version control.
+The walkthrough uses two fictional histories and a separate reader. It saves
+shared and independent chat interpretations, collects a later correction, reviews
+a proposal, marks dependent documents, updates one chat and exports/imports a
+bundle before restoring an earlier interpretation. All data lives in an isolated
+temporary directory that is removed afterward. It makes no model calls, reads no
+real chats and sends no messages.
 
-## Built on Agent State Core
-
-[Agent State Core](https://github.com/zhaosknss/agent-state-core) provides the
-general Python + SQLite layer for versioned state, scoped records, sources, and
-history. Dialogue Bridge uses a [fixed core commit](plugins/dialogue-bridge/requirements.txt)
-and supplies conversation access, interpretation guidance, and the Codex workflow.
-
-The core can also be combined with other models, memory systems, retrieval,
-tools, and orchestrators. Dialogue Bridge is one application of those building
-blocks. Suggestions for other combinations are welcome.
-
-## Help shape the next version
-
-Tell us where you had to explain something again, which context was missed, or
-whether another conversation's contribution changed your next step. A short
-impression or an installation snag is useful feedback; a complete transcript
-or a technical diagnosis is unnecessary.
-
-[Share an experience or suggestion](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose).
-Include a redacted excerpt and your Codex version if they help explain it.
-
-Work toward the next version includes shared and per-chat understanding
-documents, review of affected dependencies, and a local management page.
-These additions are being prepared separately from the public alpha.7 preview.
+This demonstrates the storage and continuation workflow. It does not measure
+understanding quality, fewer corrections, better writing or token savings.
 
 ## Development and evidence
 
-After preparing the environment, use its Python to run:
+Dialogue Bridge uses a [pinned Agent State Core](plugins/dialogue-bridge/requirements.txt)
+for versioned state and records. The core stays independent of conversation policy;
+the understanding package and Codex adapters live in this plugin.
+
+After preparing the environment:
 
 ```text
 python -B -m unittest discover -s tests -v
 ```
 
-Tests use fictional data. Existing-chat trials have exercised sourced exchanges
-and concrete follow-up checks; the [walkthrough](docs/WALKTHROUGH.md) shows the
-workflow. These trials do not establish generally better reasoning or lower
-model cost.
+Tests and demos use fictional data. The prior
+[information-matched response comparison](docs/COMPARISON.md) documents an earlier
+saved-background workflow and its limits; the current runtime is checked
+separately for storage and continuation behavior. Real connected use and matched comparisons are still needed to assess
+interpretation quality and how much coordination work this saves.
 
-In the [published handoff comparison](docs/COMPARISON.md), a complete handoff and
-Bridge exports both passed the 12 selected checks. That trial did not show an
-understanding-quality advantage. Inputs, responses, and limitations are available
-for inspection.
-
-See [contributing](CONTRIBUTING.md), [dependency and design references](UPSTREAM.md),
-and the [changelog](CHANGELOG.md). [MIT License](LICENSE).
+Feedback can be simple: what you wanted, what happened, and which explanation or
+correction you had to repeat. See [contributing](CONTRIBUTING.md),
+[dependency and design references](UPSTREAM.md) and the [changelog](CHANGELOG.md).
+MIT License.
