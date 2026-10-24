@@ -1,18 +1,38 @@
 ---
 name: dialogue-collaborate
-description: Understand the supplied Codex chat links when Dialogue Bridge is mentioned, even without an additional request. Reuse sourced, revisable background in a new chat, or compare existing chats when requested. Use for repeated explanations, cross-chat drift and joint review; a simple current-chat recap needs no setup.
+description: Understand supplied Codex chat links when Dialogue Bridge is mentioned, even without an additional request. Connect selected sources, reuse background in a new reader, or ask original chats to compare views when requested. Use dialogue-understand for an already connected space; a simple current-chat recap needs no setup.
 ---
 
 # Dialogue collaboration
 
 When the user mentions Dialogue Bridge and supplies `codex://threads/` links with
 no further request, default to understanding those selected conversations in this
-chat. Link order does not matter. A focus such as "了解写法" or "聊一个新方向"
+chat. Link order does not matter. A focus such as "understand our writing choices"
+or "discuss a new direction"
 guides retrieval; it is optional. Do not require a saved name, a handoff document,
 an extra command or a choice of modes. Use the continuation reference below to
 match an existing background or prepare it internally, then briefly explain the
 useful understanding and any material uncertainty. With links alone, stop there;
 do not execute unfinished source tasks or invite the original chats to respond.
+
+Use the common runtime through `bridge_<action>` MCP tools or its bundled CLI.
+The [runtime reference](../dialogue-understand/references/runtime.md) describes
+source selection, reader binding, documents and revisions. Prefer it for new
+understanding spaces. Existing alpha.7 commands below remain valid for prior
+history and shared-record workflows; do not make users migrate just to read one.
+
+An explicit request such as "keep these chats connected as we work" selects
+ongoing sources and their later messages. Links alone create a reader of the
+selected background. Reader binding, source enrollment and permission to request
+an original chat's response are separate; preserve the user's established choice
+without asking again each turn. Do not automatically enroll every project chat.
+
+After connecting or reopening a space, use the shared method in
+[dialogue-understand](../dialogue-understand/SKILL.md): read relevant common
+understanding and this chat's document, revisit examples and corrections, keep an
+independent view, and return useful sourced contributions. Shared documents and
+the index change as evidence accumulates; this public skill does not store private
+user experiences. Each chat may challenge the coordinator.
 
 When the user wants a new chat to understand prior work, writing choices, examples
 or the way they have been collaborating, use [saved background and continuation](references/continuation.md).
@@ -31,8 +51,8 @@ conversation's own purpose and accumulated context. Another conversation can
 correct the coordinator. Retrieval, disagreement, revision and continuation are
 parts of one workflow, not a requirement to run a fixed debate every time.
 
-This early version provides stored-history reads and a local shared inbox.
-The bundled CLI does **not** wake or send prompts to another chat. Distinguish
+The runtime provides stored-history reads, private documents and a shared inbox.
+An inbox write does **not** itself wake or send prompts to another chat. Distinguish
 your analysis of another chat's history from that original chat actually responding.
 Original chats can participate when the user invokes this skill there, in the same
 workspace. If the host already exposes existing-chat messaging tools, they are an
@@ -48,7 +68,7 @@ it does not automatically replace an earlier decision. Reconsider old conclusion
 using original evidence, later corrections and actual results together.
 
 Resolve what a proposed change affects before recommending a new direction.
-"Different", "another approach" or "换个方向" can refer to the subject, method,
+"Different", "another approach" or "a new direction" can refer to the subject, method,
 expression or scope. Preserve what the user has kept; when evidence is insufficient,
 state a provisional interpretation rather than silently choosing one dimension.
 Ask only if the difference materially changes the next action. Do not turn a local

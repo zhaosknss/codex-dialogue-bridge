@@ -1,5 +1,15 @@
 # Reuse understanding in a new chat
 
+For new understanding spaces, prefer the common runtime and
+[runtime operations](../../dialogue-understand/references/runtime.md), then follow
+[the shared understanding method](../../dialogue-understand/SKILL.md). It connects
+the shared document, each chat's own interpretation and the unified index. Use
+`list_spaces`, `connect` and `open` through the MCP tools or `bridge_service.py`.
+Links alone bind a reader; ongoing source collection requires the corresponding
+connection request. The older `dialogue.py` commands below remain supported for
+alpha.7 backgrounds and source-record workflows. Do not mix their payloads with
+the runtime action envelope without checking the runtime reference.
+
 The outcome is a useful start to the user's next conversation: recover relevant
 judgment, examples and corrections so they can speak normally about the new task.
 Do not simply resume the source chats' unfinished tasks or impose their writing
@@ -17,7 +27,7 @@ The default user flow is a new local chat, a Dialogue Bridge mention, and source
 chat links. They need not add a request: links alone mean "understand this
 background". An optional request can focus that understanding or specify a new
 task. Accept ordinary requests such as "Use what these chats have learned; I want
-to discuss another direction" or "沿用公众号讨论的背景，先聊这个想法". Once loaded,
+to discuss another direction". Once loaded,
 briefly convey the useful understanding, or respond to the task if one was given.
 Do not ask for a mode or keep explaining setup. A plugin mention activates the
 packaged skill in supported local Codex surfaces; it is not permission to execute

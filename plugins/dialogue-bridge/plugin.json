@@ -1,15 +1,16 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "dialogue-bridge",
-  "version": "0.1.0-alpha.7",
-  "description": "Mention with Codex chat links to understand their background; reuse sourced, revisable understanding or compare existing chats when requested.",
+  "version": "0.2.0-alpha.1",
+  "description": "Continue sourced, revisable understanding across independent Codex chats, with shared context, each chat's own view and useful discoveries carried back into its work.",
   "license": "MIT",
   "extensions": {
     "com.openai": {
       "requires_local_executor": true,
+      "hooks": "./hooks/hooks.json",
       "interface": {
         "displayName": "Dialogue Bridge",
-        "shortDescription": "Give chat links; carry useful understanding into a new chat",
+        "shortDescription": "Shared understanding; each chat keeps its own view",
         "defaultPrompt": ["Understand the conversations linked in my message."],
         "category": "Productivity"
       }

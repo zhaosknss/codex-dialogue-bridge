@@ -32,3 +32,5 @@ jobs:
         run: python -B plugins/dialogue-bridge/scripts/demo.py --directory local-data/ci-demo
       - name: Run the fictional saved-background example
         run: python -B plugins/dialogue-bridge/scripts/context_demo.py --directory local-data/ci-context-demo
+      - name: Run the fictional understanding workflow
+        run: python -B plugins/dialogue-bridge/scripts/understanding_demo.py

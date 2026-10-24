@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shared understanding"
+  short_description: "Revisit shared context and keep each chat independent"
+  default_prompt: "Use $dialogue-understand to load the relevant shared understanding, reconsider it against the source examples, and continue my current task."

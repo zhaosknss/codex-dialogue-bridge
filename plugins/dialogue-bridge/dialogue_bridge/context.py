@@ -168,6 +168,25 @@ class Context:
         saved = self.ledger.snapshot()
         return saved.revision, saved.state.get("understanding")
 
+    def understanding_revision(self, current=None):
+        """The shared projection changes only when understanding changes.
+
+        Chat documents, proposals and receipts share this Ledger's concurrency
+        revision, but must not make an unchanged projection look human-edited.
+        Older alpha records have no embedded version, so locate their last
+        understanding transition through the public history API.
+        """
+        if current is None:
+            _, current = self.snapshot()
+        if current is None:
+            return 0
+        if "shared_revision" in current:
+            return current["shared_revision"]
+        for commit in reversed(self.ledger.history()):
+            if "understanding" in commit.transition.updates:
+                return commit.revision
+        return 0
+
     def coverage(self):
         latest = json.loads((self.archive.root / "project.json").read_text(encoding="utf-8"))
         if latest != self.archive.config:
@@ -276,11 +295,12 @@ class Context:
         original_document = document.read_bytes() if document.exists() else None
         if document.exists():
             actual = hashlib.sha256(original_document).hexdigest()
-            expected = hashlib.sha256(self.render(old, revision).encode()).hexdigest()
+            expected = hashlib.sha256(self.render(old, self.understanding_revision(old)).encode()).hexdigest()
             if actual != expected and payload.get("document_sha256") != actual:
                 raise ValueError("The understanding document was edited; read it and supply its document_sha256 before replacing it")
         current = {"purpose": purpose, "entries": checked, "reason": reason, "author_thread": actor,
-                   "coverage_token": coverage["token"], "processed_change": coverage["change"]}
+                   "coverage_token": coverage["token"], "processed_change": coverage["change"],
+                   "shared_revision": revision + 1}
         event = Record("working_understanding", {"reason": reason, "input_digest": fingerprint},
                        (self.audience,), {"scope": "this saved background only; interpretation, not permanent instructions"})
         result = self.ledger.commit(Transition(updates={"understanding": current}, records=(event,)),
@@ -377,7 +397,7 @@ class Context:
                 "entry_index": [{"key": e["key"], "scope": e["scope"], "status": e["status"]} for e in current["entries"]],
                 "coverage": coverage, "needs_review": current["coverage_token"] != coverage["token"],
                 "document": str(document.resolve()), "document_sha256": hashlib.sha256(data).hexdigest(),
-                "document_edited": data != self.render(current, revision).encode(),
+                "document_edited": data != self.render(current, self.understanding_revision(current)).encode(),
                 "retrieval": "literal matching over curated entries; the host chooses conceptual relevance and can search original history"}
 
 
