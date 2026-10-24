@@ -22,6 +22,8 @@ shared entries, this chat's document, changes and source coverage. Reuse materia
 already loaded this turn. Expand relevant entries and original examples when a
 specific gap warrants it, rather than loading every document. Read
 [runtime operations](references/runtime.md) for exact calls and private documents.
+For an explicit ongoing connection, use its collaborator mode; inspect relevant
+`related_spaces` when this chat already has a different primary connection.
 
 Shared understanding informs this chat's task. It does not replace the user's
 current instructions, project rules or permission to act. Links alone request

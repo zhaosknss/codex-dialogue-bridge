@@ -79,6 +79,25 @@ class RuntimeTests(unittest.TestCase):
         self.b = BridgeService(dispatch, actor=B)
         self.counter = 0
 
+    def test_ongoing_connection_is_available_to_selected_sources_without_waking_them(self):
+        self.reader.call("connect", {"name": "Ongoing fictional", "directory": str(self.directory),
+            "sources": [{"thread": A, "scope": "story"}, {"thread": B, "scope": "research"}],
+            "mode": "collaborator", "participate": False})
+        self.assertEqual(Registry().resolve(actor=A)[1], ["story"])
+        self.assertEqual(Registry().resolve(actor=B)[1], ["research"])
+        self.assertEqual(self.history.reads, [])
+        self.mock_model.assert_not_called()
+
+    def test_ongoing_connection_preserves_existing_primary_and_exposes_related_space(self):
+        self.a.call("connect", {"name": "Existing fictional", "directory": str(self.root / "existing"),
+            "sources": [{"thread": A, "scope": "story"}]})
+        self.reader.call("connect", {"name": "Additional fictional", "directory": str(self.directory),
+            "sources": [{"thread": A, "scope": "story"}, {"thread": B, "scope": "research"}],
+            "mode": "collaborator"})
+        result = self.a.call("open", {"queue": False})
+        self.assertEqual(result["name"], "Existing fictional")
+        self.assertEqual(result["related_spaces"], [{"name": "Additional fictional", "scopes": ["story"]}])
+
     def tearDown(self):
         self.model.stop()
         self.transport.stop()

@@ -38,6 +38,11 @@ With links alone, bind the current reader and keep `participate` false. An expli
 request to keep selected chats connected permits ongoing collection of the selected
 sources; enrollment of the current reader remains a separate choice. Check the
 returned membership rather than assuming that binding enrolled it.
+
+For that ongoing connection, pass `mode: "collaborator"`. Selected source chats
+receive a scoped binding for their next check-in; another space's existing primary
+binding is kept. `related_spaces` lets a returning source discover other connected
+spaces without mixing their contents. No source chat is resumed or messaged.
 `participate: true` enrolls the actual current chat too; use it only when that is
 part of the request. With multiple project scopes, include the current chat in
 `sources` with its intended scope before using this option.
