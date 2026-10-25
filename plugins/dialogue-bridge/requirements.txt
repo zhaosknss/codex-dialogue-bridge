@@ -1,2 +1,2 @@
-# Includes record paging; old alpha-2 release archives lack this API.
-agent-state-core @ git+https://github.com/zhaosknss/agent-state-core.git@538a3be386ec778e1682168d4fd418c2d0b51869
+# Includes record paging and bounded historical journal reads.
+agent-state-core @ git+https://github.com/zhaosknss/agent-state-core.git@e7dd1241bd9e774643dc2f71648322ee3c430ef7

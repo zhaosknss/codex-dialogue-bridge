@@ -22,6 +22,12 @@ both the pinned Git commit recorded in package metadata and the paging API.
 Repeating setup reuses a matching environment; failures are reported without
 falling back to global Python. Leave unrelated existing directories alone.
 
+Keep the returned interpreter path intact, including `bin/python` symlinks in
+POSIX virtual environments. If an older installation saved the base interpreter
+instead, reopen/register the existing space using this environment's Python, or
+set `DIALOGUE_BRIDGE_PYTHON` to that exact environment path before starting Codex.
+This repairs runtime selection without recreating the saved understanding space.
+
 Run the deterministic example in a new private directory:
 
 ```text

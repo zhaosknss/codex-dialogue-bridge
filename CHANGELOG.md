@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- Partial shared revisions retain untouched entries' original evidence hashes,
+  so changed sources remain flagged and unrelated invalid quotations do not block
+  a scoped correction.
+- Preserve virtual-environment interpreter paths across registry, hook and service
+  startup, including symlink-based POSIX environments and stdin action forwarding.
+- Use the current reader binding for document citations, dependencies and scopes
+  without enrolling the reader as an indexed source.
+- Run background model calls outside the space lock and reject output when its
+  original revision or source coverage changes. Stop/PreCompact hooks can enqueue
+  collection independently of long-running space operations.
+- Retain completed model responses with their original operation/base before
+  applying them. Explicit retry can replay an already committed result and repair
+  progress without another model call; recovery never rewinds newer progress.
+- Update the core pin to include bounded historical journal reads.
+
 ## 0.2.0-alpha.1 — 2026-10-24
 
 - Shared understanding, independent chat documents and a unified private index,

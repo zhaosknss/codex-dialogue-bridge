@@ -5,7 +5,7 @@ successful write is presented as original-chat participation or user consent.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from copy import deepcopy
 import hashlib
 import json
@@ -81,10 +81,15 @@ def _shared(context):
             "purpose": (current or {}).get("purpose", ""), "coverage": context.coverage()}
 
 
-def _store(context):
+def _store(context, actor=None, allowed=None):
     from dialogue_understanding import DocumentStore
+    grants = {_UI_ACTOR: ["shared", *(s["scope"] for s in context.config["sources"])]}
+    limits = {}
+    if actor is not None and allowed is not None:
+        grants[actor] = sorted(allowed)
+        limits[actor] = sorted(allowed)
     return DocumentStore(context.ledger, context.archive.root,
-                         actor_scopes={_UI_ACTOR: ["shared", *(s["scope"] for s in context.config["sources"])]},
+                         actor_scopes=grants, actor_limits=limits,
                          source_link=lambda source: "codex://threads/" + source["ref"].split("/", 1)[0])
 
 
@@ -228,7 +233,8 @@ def _open(context, registry, jobs, actor, bound, arguments):
                                 for r in registry.list() if r["available"] and r["name"] != context.config["name"]
                                 and any(s["thread"] == actor for s in r["sources"])] if actor else []
     _, current = context.snapshot()
-    result["shared_needs_review"] = current is None or current["coverage_token"] != result["coverage"]["token"]
+    result["shared_needs_review"] = (current is None or current["coverage_token"] != result["coverage"]["token"]
+                                     or any(e["source_warnings"] for e in shared["entries"]))
     if lightweight or allowed != {"shared", *(s["scope"] for s in context.config["sources"])}:
         result["coverage"] = {k: result["coverage"][k] for k in ("token", "change", "all_sources_indexed", "meaning")}
     if lightweight:
@@ -361,31 +367,73 @@ def _packet(context, jobs, settings):
     return {**base, "evidence": evidence, "more": next_change < upper or next_offset > 0}, (next_change, next_offset)
 
 
-def _interpret(context, jobs, settings, job):
-    from .models import derive
-    if not context.coverage()["all_sources_indexed"]:
-        raise ValueError("Collect every selected source before launching background interpretation")
-    packet, position = _packet(context, jobs, settings)
-    if not packet["evidence"]:
-        return {"updated": False, "maintenance": jobs.progress(context.archive.root), "more": False}
-    token = context.coverage()["token"]
-    result = derive(settings, packet)
-    if context.coverage()["token"] != token:
-        raise ValueError("History changed during interpretation; output was not applied")
-    worker = str(uuid5(NAMESPACE_URL, "dialogue-bridge:background:" + context.config["id"]))
-    entries, remove = result.get("entries", []), result.get("remove_keys", [])
+def _apply_interpretation(context, jobs, job, pending):
+    """Replay a durable response before considering another provider invocation."""
+    payload, worker = pending["payload"], pending["author"]
+    request = "context:" + worker + ":" + payload["operation_id"] if payload else None
+    committed = context.ledger.get_commit(request) if request else None
+    if not committed and (context.ledger.revision != pending["revision"] or
+                          context.coverage()["token"] != pending["coverage_token"]):
+        jobs.clear_model_result(job["id"])
+        raise ValueError("Understanding or history changed during interpretation; output was not applied. Retry to review current input")
     update = None
-    if entries or remove:
-        payload = {"operation_id": "worker-" + job["id"] + "-" + str(job["attempts"]),
-                   "expected_revision": context.ledger.revision, "coverage_token": token,
-                   "reason": result.get("reason"), "entries": entries, "remove_keys": remove}
-        update = _update(context, payload, worker, {"shared", *(s["scope"] for s in context.config["sources"])})
-    jobs.progress(context.archive.root, position)
-    if packet["more"]:
+    try:
+        if payload:
+            update = _update(context, payload, worker, {"shared", *(s["scope"] for s in context.config["sources"])})
+    except (ValueError, TypeError, KeyError):
+        # Invalid, uncommitted output can be replaced on an explicit retry.
+        # Transient I/O failures retain the response, whether committed or not.
+        if not request or context.ledger.get_commit(request) is None:
+            jobs.clear_model_result(job["id"])
+        raise
+    if committed:
+        _store(context).materialize(_shared(context))
+    progress = jobs.progress(context.archive.root, tuple(pending["position"]))
+    more = progress["change"] < context.coverage()["change"] or progress["offset"] > 0
+    if more:
         jobs.enqueue(context.archive.root, context.config["name"], "understand", worker)
-    return {"updated": update is not None, "update": update, "maintenance": jobs.progress(context.archive.root),
-            "more": packet["more"], "author": worker, "authorship": "background_interpretation",
+    jobs.clear_model_result(job["id"])
+    return {"updated": update is not None, "update": update, "maintenance": progress,
+            "more": more, "author": worker, "authorship": "background_interpretation",
             "meaning": "Derived interpretation, not participation by any original chat"}
+
+
+def _interpret(directory, jobs, job):
+    from .models import derive
+    with space_lock(directory), closing(Context(directory)) as context:
+        settings = jobs.settings(directory)
+        if not settings["auto_understand"] or not settings["model_command"]:
+            raise ValueError("Background interpretation is disabled; use the Skill or explicitly configure a model provider")
+        pending = jobs.model_result(job["id"])
+        if pending is not None:
+            return _apply_interpretation(context, jobs, job, pending)
+        if not context.coverage()["all_sources_indexed"]:
+            raise ValueError("Collect every selected source before launching background interpretation")
+        packet, position = _packet(context, jobs, settings)
+        if not packet["evidence"]:
+            return {"updated": False, "maintenance": jobs.progress(directory), "more": False}
+        token = context.coverage()["token"]
+        worker = str(uuid5(NAMESPACE_URL, "dialogue-bridge:background:" + context.config["id"]))
+    # Provider I/O holds neither the space lock nor an open database connection.
+    # Other chats can keep reading/writing; the original base is checked on return.
+    result = derive(settings, packet)
+    entries, remove = result.get("entries", []), result.get("remove_keys", [])
+    payload = None
+    if entries or remove:
+        payload = {"operation_id": "worker-" + uuid4().hex,
+                   "expected_revision": packet["revision"], "coverage_token": token,
+                   "reason": result.get("reason"), "entries": entries, "remove_keys": remove}
+    pending = {"payload": payload, "author": worker, "revision": packet["revision"],
+               "coverage_token": token, "position": list(position)}
+    # Save before waiting for the space lock: lock contention is retryable and
+    # must not discard a completed (potentially billed) provider response.
+    jobs.model_result(job["id"], pending)
+    with space_lock(directory), closing(Context(directory)) as context:
+        current_settings = jobs.settings(directory)
+        if not current_settings["auto_understand"] or current_settings["model_command"] != settings["model_command"]:
+            jobs.clear_model_result(job["id"])
+            raise ValueError("Background provider settings changed during interpretation; output was not applied")
+        return _apply_interpretation(context, jobs, job, pending)
 
 
 def _process(registry, jobs, arguments):
@@ -403,21 +451,15 @@ def _process(registry, jobs, arguments):
         if not job:
             break
         try:
-            with space_lock(job["directory"]):
-                context = Context(job["directory"])
-                try:
+            if job["kind"] == "understand":
+                result = _interpret(job["directory"], jobs, job)
+            else:
+                with space_lock(job["directory"]), closing(Context(job["directory"])) as context:
                     settings = jobs.settings(job["directory"])
-                    if job["kind"] == "sync":
-                        result = {"refresh": refresh_context(context)}
-                        _store(context).materialize(_shared(context))
-                        if settings["auto_understand"] and settings["model_command"]:
-                            result["queued"] = jobs.enqueue(job["directory"], job["name"], "understand")
-                    elif settings["auto_understand"] and settings["model_command"]:
-                        result = _interpret(context, jobs, settings, job)
-                    else:
-                        raise ValueError("Background interpretation is disabled; use the Skill or explicitly configure a model provider")
-                finally:
-                    context.close()
+                    result = {"refresh": refresh_context(context)}
+                    _store(context).materialize(_shared(context))
+                    if settings["auto_understand"] and settings["model_command"]:
+                        result["queued"] = jobs.enqueue(job["directory"], job["name"], "understand")
             output.append(jobs.finish(job, result=result))
         except Exception as exc:
             output.append(jobs.finish(job, error=exc))
@@ -481,12 +523,19 @@ def dispatch(action, arguments=None, *, actor=None):
         if action == "open" and arguments.get("lightweight") and not arguments.get("name") and not arguments.get("directory"):
             return {"bound": False}
         raise
+    queued_kind = (arguments.get("enqueue") if action == "jobs" and arguments.get("operation", "list") == "list"
+                   else "sync" if action == "sync" and arguments.get("queue") else None)
+    if queued_kind in {"sync", "understand"}:
+        # Queue persistence is independent of the space/document lock. In
+        # particular, a Stop hook must survive a slow history/model worker.
+        config = json.loads((Path(directory) / "project.json").read_text(encoding="utf-8"))
+        return {"queued": jobs.enqueue(directory, config["context"]["name"], queued_kind, actor)}
     with space_lock(directory):
         context = Context(directory)
         try:
-            store = _store(context)
             allowed = _allowed(context, actor, bound, arguments.get("scopes"))
             author = host_actor or _UI_ACTOR
+            store = _store(context, author, allowed)
             if action == "open":
                 return _open(context, registry, jobs, actor, bound, arguments)
             if action == "sync":

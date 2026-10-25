@@ -93,9 +93,11 @@ class DocumentStore:
     ``source_link`` may map a citation/source to a host URL. Otherwise explicit
     url/uri fields are honored and portable source URNs retain exact locators.
     actor=None is a trusted operator read; an actor gets shared + its source scopes.
+    Host-issued actor_scopes grant additional scopes; actor_limits can narrow the
+    resulting set to the current binding. Neither is accepted in a write payload.
     """
 
-    def __init__(self, ledger, directory, *, source_link=None, actor_scopes=None):
+    def __init__(self, ledger, directory, *, source_link=None, actor_scopes=None, actor_limits=None):
         self.ledger = ledger
         self.directory = Path(directory).resolve()
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -108,6 +110,13 @@ class DocumentStore:
             if not isinstance(scopes, (list, tuple, set)) or any(not isinstance(s, str) for s in scopes):
                 raise ValueError("Trusted actor scopes must be scope names")
             self.actor_scopes[actor] = set(scopes)
+        self.actor_limits = {}
+        if actor_limits is not None and not isinstance(actor_limits, dict):
+            raise ValueError("actor_limits must be a trusted actor-to-scopes mapping")
+        for actor, scopes in (actor_limits or {}).items():
+            if not isinstance(scopes, (list, tuple, set)) or any(not isinstance(s, str) for s in scopes):
+                raise ValueError("Trusted actor limits must be scope names")
+            self.actor_limits[_thread(actor)] = set(scopes)
 
     def _snapshot(self):
         snapshot = self.ledger.snapshot()
@@ -166,6 +175,11 @@ class DocumentStore:
             if not grants <= configured:
                 raise ValueError("Trusted actor grants contain unconfigured scopes")
             allowed |= grants
+            limit = self.actor_limits.get(_thread(actor))
+            if limit is not None:
+                if not limit <= configured:
+                    raise ValueError("Trusted actor limits contain unconfigured scopes")
+                allowed &= limit
         if scopes is not None:
             if not isinstance(scopes, (list, tuple, set)) or any(not isinstance(s, str) for s in scopes):
                 raise ValueError("scopes must be a collection of scope names")

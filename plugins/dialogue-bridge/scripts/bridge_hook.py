@@ -22,7 +22,7 @@ def select_runtime(*, actor=None, name=None, directory=None, environ=None):
     explicit = env.get("DIALOGUE_BRIDGE_PYTHON")
     if explicit:
         candidate = Path(explicit).expanduser()
-        return str(candidate.resolve()) if candidate.is_file() else None
+        return str(candidate.absolute()) if candidate.is_file() else None
     home = Path(env.get("DIALOGUE_BRIDGE_HOME") or Path(env.get("CODEX_HOME", Path.home() / ".codex")) / "dialogue-bridge")
     registry = home / "registry.db"
     if not registry.is_file():
@@ -39,7 +39,7 @@ def select_runtime(*, actor=None, name=None, directory=None, environ=None):
                 rows = db.execute("SELECT runtime_python FROM contexts ORDER BY name").fetchall()
         for row in rows:
             if row[0] and Path(row[0]).is_file():
-                return str(Path(row[0]).resolve())
+                return str(Path(row[0]).absolute())
     except (OSError, sqlite3.Error, ValueError):
         pass
     return None

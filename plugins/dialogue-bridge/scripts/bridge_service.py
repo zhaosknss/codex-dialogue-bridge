@@ -41,9 +41,12 @@ def main(argv=None):
             raise ValueError("Action input must be an object")
     actor = environment_actor()
     runtime = select_runtime(actor=actor, name=parameters.get("name"), directory=parameters.get("directory")) or select_runtime()
-    if runtime and Path(runtime).resolve() != Path(sys.executable).resolve() and not os.environ.get("DIALOGUE_BRIDGE_SERVICE_RELAUNCHED"):
+    if runtime and Path(runtime).absolute() != Path(sys.executable).absolute() and not os.environ.get("DIALOGUE_BRIDGE_SERVICE_RELAUNCHED"):
         env = dict(os.environ, DIALOGUE_BRIDGE_SERVICE_RELAUNCHED="1")
-        return subprocess.call([runtime, "-B", str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])], env=env)
+        command = [runtime, "-B", str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])]
+        if args.command == "action-stdin":
+            return subprocess.run(command, input=raw, text=True, encoding="utf-8", env=env).returncode
+        return subprocess.call(command, env=env)
     if args.command in {"action", "action-stdin"}:
         print(json.dumps(BridgeService(actor=actor).call(args.action, parameters), ensure_ascii=False))
         return 0

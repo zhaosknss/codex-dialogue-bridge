@@ -27,6 +27,7 @@ class Jobs:
                 CREATE TABLE IF NOT EXISTS settings(directory TEXT PRIMARY KEY, data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS progress(directory TEXT PRIMARY KEY, change_id INTEGER NOT NULL,
                     text_offset INTEGER NOT NULL DEFAULT 0);
+                CREATE TABLE IF NOT EXISTS model_results(job_id TEXT PRIMARY KEY, data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS jobs(
                     id TEXT PRIMARY KEY, directory TEXT NOT NULL, name TEXT NOT NULL,
                     kind TEXT NOT NULL, actor TEXT, status TEXT NOT NULL,
@@ -154,11 +155,31 @@ class Jobs:
     def progress(self, directory, position=None):
         directory = str(Path(directory).resolve())
         with self.db() as db:
+            row = db.execute("SELECT change_id,text_offset FROM progress WHERE directory=?", (directory,)).fetchone()
             if position is not None:
                 change, offset = position
                 if type(change) is not int or type(offset) is not int or min(change, offset) < 0:
                     raise ValueError("Interpretation progress requires a nonnegative change and offset")
-                db.execute("INSERT OR REPLACE INTO progress VALUES (?,?,?)", (directory, change, offset))
+                # Offset zero completes a change; it follows every partial slice
+                # of that change. Recovering an older job must not rewind progress.
+                if row is None or (change, offset == 0, offset) > (row[0], row[1] == 0, row[1]):
+                    db.execute("INSERT OR REPLACE INTO progress VALUES (?,?,?)", (directory, change, offset))
             row = db.execute("SELECT change_id,text_offset FROM progress WHERE directory=?", (directory,)).fetchone()
         return {"change": row[0] if row else 0, "offset": row[1] if row else 0,
                 "meaning": "Background model input consumed; not proof that its interpretation is correct"}
+
+    def model_result(self, ident, value=None):
+        """Retain a completed response before applying its idempotent shared patch.
+
+        This is private recovery data, not a provider command or a new model call.
+        A stable operation ID and its exact original base survive explicit retries.
+        """
+        with self.db() as db:
+            if value is not None:
+                db.execute("INSERT INTO model_results VALUES (?,?)", (ident, json.dumps(value, ensure_ascii=False)))
+            row = db.execute("SELECT data FROM model_results WHERE job_id=?", (ident,)).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def clear_model_result(self, ident):
+        with self.db() as db:
+            db.execute("DELETE FROM model_results WHERE job_id=?", (ident,))

@@ -258,6 +258,7 @@ class ContextTests(unittest.TestCase):
         initial["entries"].append({"key": "research", "scope": "analysis", "text": "Provisional research",
                                    "sources": [{"ref": f"{B}/b1/b", "quote": "not an ideal example"}]})
         self.context.save(initial, actor=C)
+        original_research = copy.deepcopy(self.context.snapshot()[1]["entries"][1])
         patch_data = {"operation_id": "invalid", "expected_revision": 1,
                       "coverage_token": self.context.coverage()["token"], "reason": "Reconsider",
                       "entries": [initial["entries"][0]]}
@@ -267,9 +268,12 @@ class ContextTests(unittest.TestCase):
                 self.context.revise({**patch_data, **extra}, actor=C)
         self.context.archive.sync(RecentHistory([[turn("b1", user("b", "The original evidence was replaced."))]]), B)
         patch_data["coverage_token"] = self.context.coverage()["token"]
-        with self.assertRaisesRegex(ValueError, "verbatim"):
-            self.context.revise(patch_data, actor=C)
-        self.assertEqual(self.context.ledger.revision, 1)
+        self.context.revise(patch_data, actor=C)
+        self.assertEqual(self.context.ledger.revision, 2)
+        self.assertEqual(self.context.snapshot()[1]["entries"][1], original_research)
+        visible = self.context.get()
+        self.assertTrue(visible["needs_review"])
+        self.assertTrue(visible["entries"][1]["source_warnings"])
 
     def test_compact_context_preserves_review_omission_and_document_controls(self):
         self.context.save(self.payload(), actor=C)
@@ -471,7 +475,7 @@ class ContextTests(unittest.TestCase):
     def test_registry_retains_a_reusable_private_interpreter(self):
         registry = Registry(self.root / "runtime-registry")
         registry.register("Saved", self.context.archive.root)
-        self.assertEqual(registry.list()[0]["runtime_python"], str(Path(sys.executable).resolve()))
+        self.assertEqual(registry.list()[0]["runtime_python"], str(Path(sys.executable).absolute()))
 
     def test_source_links_match_exactly_regardless_of_order_or_repetition(self):
         registry = Registry(self.root / "link-registry")

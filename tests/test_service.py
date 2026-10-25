@@ -251,7 +251,7 @@ class HookTests(unittest.TestCase):
                 db.execute("INSERT INTO contexts VALUES(?,?,?)", ("fiction", directory, sys.executable))
                 db.execute("INSERT INTO bindings VALUES(?,?)", (ACTOR, "fiction"))
                 db.commit()
-            self.assertEqual(module.select_runtime(actor=ACTOR, environ={"DIALOGUE_BRIDGE_HOME": directory}), str(Path(sys.executable).resolve()))
+            self.assertEqual(module.select_runtime(actor=ACTOR, environ={"DIALOGUE_BRIDGE_HOME": directory}), str(Path(sys.executable).absolute()))
             self.assertIsNone(module.select_runtime(actor=OTHER, environ={"DIALOGUE_BRIDGE_HOME": directory}))
         output = io.StringIO()
         self.assertEqual(module.main(io.StringIO("invalid input"), output), 0)
