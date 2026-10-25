@@ -1,14 +1,15 @@
 # Dependency and design references
 
-Checked 2026-10-24. This local plugin does not vendor third-party source code.
+Checked 2026-10-25. This local plugin does not vendor third-party source code.
 
 ## Actual dependency
 
-- **Agent State Core**, commit `538a3be386ec778e1682168d4fd418c2d0b51869`,
-  [MIT license](https://github.com/zhaosknss/agent-state-core/blob/538a3be386ec778e1682168d4fd418c2d0b51869/LICENSE).
+- **Agent State Core**, commit `e7dd1241bd9e774643dc2f71648322ee3c430ef7`,
+  [MIT license](https://github.com/zhaosknss/agent-state-core/blob/e7dd1241bd9e774643dc2f71648322ee3c430ef7/LICENSE).
   Uses public `Ledger`, `Record`, `Transition`, and `RecordCursor` APIs from
-  `agent_state_core`. This checkout includes Unreleased paging; the old alpha-2
-  release archives do not. The base core has no third-party runtime dependencies.
+  `agent_state_core`. This checkout includes alpha-3 record paging and bounded
+  historical journal reads; the old alpha-2 release archives lack paging. The base
+  core has no third-party runtime dependencies.
   `--core-path` is a development source override; check the revision separately.
   The single pin is shipped in `plugins/dialogue-bridge/requirements.txt`;
   root requirements only includes it. Bundled setup uses Python venv/pip and Git

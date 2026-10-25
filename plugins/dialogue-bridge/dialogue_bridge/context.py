@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from copy import deepcopy
 import hashlib
 import json
 import os
@@ -67,7 +68,7 @@ class Registry:
                 raise ValueError("That background name already points elsewhere; choose another name")
             db.execute("INSERT INTO contexts(name,directory,runtime_python) VALUES (?,?,?) "
                        "ON CONFLICT(name) DO UPDATE SET runtime_python=excluded.runtime_python",
-                       (name, str(Path(directory).resolve()), str(Path(sys.executable).resolve())))
+                       (name, str(Path(directory).resolve()), str(Path(sys.executable).absolute())))
 
     def list(self, threads=None):
         selected = {thread_id(value) for value in threads} if threads else None
@@ -236,6 +237,10 @@ class Context:
                 "meaning": "Changes since the last saved understanding; current excerpts may reflect a later edit, so recheck coverage before save"}
 
     def save(self, payload, *, actor=None):
+        return self._save(payload, actor=actor)
+
+    def _save(self, payload, *, actor=None, retained=None):
+        """Retained entries come only from the historical base of a partial revision."""
         from agent_state_core import Record, Transition
         allowed = {"operation_id", "expected_revision", "coverage_token", "purpose", "reason", "entries", "document_sha256"}
         if not isinstance(payload, dict) or set(payload) - allowed:
@@ -278,6 +283,11 @@ class Context:
             citations = entry.get("sources")
             if not isinstance(citations, list) or not 1 <= len(citations) <= 8:
                 raise ValueError("Each entry needs 1..8 original message quotations")
+            if retained is not None and key in retained:
+                # An unrelated patch is not a review of this entry's evidence.
+                # Keep its original hashes, even when a source changed/disappeared.
+                checked.append(deepcopy(retained[key]))
+                continue
             evidence = []
             for citation in citations:
                 if not isinstance(citation, dict) or set(citation) != {"ref", "quote"}:
@@ -348,7 +358,9 @@ class Context:
         entries.update((entry["key"], entry) for entry in edits)
         envelope = {key: value for key, value in payload.items() if key != "remove_keys"}
         envelope.update(purpose=payload.get("purpose", base["purpose"]), entries=list(entries.values()))
-        return self.save(envelope, actor=actor)
+        retained = {entry["key"]: entry for entry in base["entries"]
+                    if entry["key"] not in set(keys) | set(removed)}
+        return self._save(envelope, actor=actor, retained=retained)
 
     def render(self, current, revision):
         if current is None:
@@ -395,7 +407,8 @@ class Context:
         return {"name": self.config["name"], "workspace": str(self.archive.root.resolve()), "revision": revision,
                 "purpose": current["purpose"], "entries": entries, "omitted_entries": len(candidates)-len(entries),
                 "entry_index": [{"key": e["key"], "scope": e["scope"], "status": e["status"]} for e in current["entries"]],
-                "coverage": coverage, "needs_review": current["coverage_token"] != coverage["token"],
+                "coverage": coverage, "needs_review": current["coverage_token"] != coverage["token"]
+                    or any(e["source_warnings"] for e in entries),
                 "document": str(document.resolve()), "document_sha256": hashlib.sha256(data).hexdigest(),
                 "document_edited": data != self.render(current, self.understanding_revision(current)).encode(),
                 "retrieval": "literal matching over curated entries; the host chooses conceptual relevance and can search original history"}

@@ -104,6 +104,59 @@ class RuntimeDocumentTests(unittest.TestCase):
         finally:
             context.close()
 
+    def test_partial_revision_preserves_unreviewed_source_hashes_and_warnings(self):
+        before = next(e for e in self.current().state["understanding"]["entries"] if e["key"] == "story")
+        context = Context(self.directory)
+        try:
+            context.archive.sync(FictionalHistory("Discuss first; the story idea is now approved."), A)
+        finally:
+            context.close()
+        self.call("shared_update", {"operation_id": "research-only", "expected_revision": self.revision(),
+            "coverage_token": self.call("documents", actor=B)["shared"]["coverage"]["token"],
+            "reason": "Reconsider research only", "entries": [{"key": "research", "scope": "research",
+            "text": "Keep sample counts with the denominator.", "sources": [self.citation(B)]}]}, actor=B)
+        after = next(e for e in self.current().state["understanding"]["entries"] if e["key"] == "story")
+        self.assertEqual(after, before)
+        opened = self.call("open", {"queue": False})
+        self.assertTrue(opened["shared_needs_review"])
+        self.assertEqual(next(e for e in opened["entries"] if e["key"] == "story")["source_warnings"][0]["status"], "source_changed")
+
+    def test_partial_revision_is_not_blocked_by_another_projects_removed_quote(self):
+        context = Context(self.directory)
+        try:
+            context.archive.sync(FictionalHistory("The research quotation has been replaced."), B)
+        finally:
+            context.close()
+        result = self.call("shared_update", {"operation_id": "story-only", "expected_revision": self.revision(),
+            "coverage_token": self.call("documents")["shared"]["coverage"]["token"],
+            "reason": "Reconsider story only", "entries": [{"key": "story", "scope": "story",
+            "text": "Keep this story idea exploratory.", "sources": [self.citation(A)]}]})
+        self.assertEqual(result["revision"], self.revision())
+        research = next(e for e in self.call("documents", actor=B)["shared"]["entries"] if e["key"] == "research")
+        self.assertTrue(research["source_warnings"])
+
+    def test_reader_can_save_own_citations_and_dependencies_without_source_enrollment(self):
+        Registry().bind("Fictional space", C, ["story"])
+        saved = self.call("chat_update", self.own("reader-own", dependencies=["story"], sources=[self.citation(A)]), actor=C)
+        self.assertEqual(saved["author_thread"], C)
+        docs = self.call("documents", actor=C)
+        own = next(d for d in docs["chats"] if d["owner_thread"] == C)
+        self.assertEqual(own["dependencies"], ["story"])
+        self.assertEqual(own["sources"][0]["quote"], "Discuss first")
+        self.assertNotIn(C, [s["thread"] for s in docs["shared"]["sources"]])
+        for payload in (self.own("hidden-dependency", dependencies=["research"]),
+                        self.own("hidden-quote", sources=[self.citation(B)]),
+                        self.own("hidden-scope", scope="research")):
+            with self.subTest(payload=payload), self.assertRaises(ValueError):
+                self.call("chat_update", payload, actor=C)
+
+    def test_narrowed_source_binding_limits_document_dependencies_and_default_scope(self):
+        Registry().bind("Fictional space", A, ["shared"])
+        with self.assertRaisesRegex(ValueError, "permitted scopes"):
+            self.call("chat_update", self.own("hidden-native-dependency", dependencies=["story"]))
+        self.call("chat_update", self.own("shared-only"))
+        self.assertEqual(self.call("documents")["chats"][0]["scope"], "shared")
+
     def test_regular_runtime_chat_update_and_per_entry_review_after_shared_change(self):
         saved = self.call("chat_update", self.own())
         self.assertEqual(saved["author_thread"], A)

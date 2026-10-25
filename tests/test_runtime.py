@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import subprocess
+import venv
 import unittest
 from unittest.mock import patch
 
@@ -144,6 +146,36 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual({s["thread"] for s in participated["sources"]}, {A, B, READER})
         self.sync()
         self.assertIn(READER, {ident for _, ident in self.history.reads})
+
+    @unittest.skipIf(os.name == "nt", "POSIX symlink virtual environment regression")
+    def test_private_venv_survives_registry_selection_and_action_stdin_relaunch(self):
+        import agent_state_core
+        import importlib.util
+        self.prepare_shared()
+        private = self.root / "venv"
+        venv.EnvBuilder(with_pip=False, symlinks=True).create(private)
+        python = private / "bin/python"
+        site = next((private / "lib").glob("python*/site-packages"))
+        (site / "fictional-core.pth").write_text(str(Path(agent_state_core.__file__).resolve().parent.parent) + "\n")
+        environment = {**os.environ, "CODEX_THREAD_ID": READER}
+        environment.pop("DIALOGUE_BRIDGE_PYTHON", None)
+        environment.pop("DIALOGUE_BRIDGE_SERVICE_RELAUNCHED", None)
+        environment.pop("DIALOGUE_BRIDGE_ACTION_DELEGATED", None)
+        environment.pop("PYTHONPATH", None)
+        code = ("import sys; sys.path.insert(0," + repr(str(PLUGIN)) + "); "
+                "from dialogue_bridge.context import Registry; Registry().register('Fictional space'," + repr(str(self.directory)) + ")")
+        subprocess.run([str(python), "-I", "-c", code], env=environment, check=True, capture_output=True)
+        self.assertEqual(Registry().list()[0]["runtime_python"], str(python))
+        spec = importlib.util.spec_from_file_location("fictional_hook", PLUGIN / "scripts/bridge_hook.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.select_runtime(actor=READER, environ=environment), str(python))
+        self.assertEqual(module.select_runtime(environ={"DIALOGUE_BRIDGE_PYTHON": str(python)}), str(python))
+        result = subprocess.run([sys.executable, "-B", str(PLUGIN / "scripts/bridge_service.py"), "action-stdin", "open"],
+                                input=json.dumps({"name": "Fictional space", "queue": False}),
+                                capture_output=True, text=True, encoding="utf-8", env=environment, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["entries"][0]["key"], "explore")
 
     def test_unbound_hooks_never_create_private_data_or_enroll_sources(self):
         self.assertFalse(self.home.exists())

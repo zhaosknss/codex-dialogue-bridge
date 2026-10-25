@@ -151,6 +151,17 @@ merely because the user supplied links. Those operations can start model calls.
 Routine hooks prepare saved context and queue incremental collection; actual
 interpretation can be revised by this host model while doing the current task.
 
+Background model calls release the space lock while waiting for their provider.
+A concurrent document revision or source change rejects uncommitted stale output.
+Completed responses are saved privately before application; retry after a committed
+patch can repair maintenance progress without invoking the provider again. If the
+process stops before the response is persisted, an explicit retry may still call
+the provider again. This is not exactly-once external model execution.
+
+Partial shared revisions preserve unchanged entries' original evidence versions.
+Source-change warnings remain until those entries are explicitly reconsidered;
+an unrelated project update does not acknowledge their evidence as reviewed.
+
 `export` accepts `{name, path}` for a new ZIP destination; `import` accepts
 `{path, directory}` for a new or empty target. `restore` accepts `{name, revision,
 operation_id?}` to restore retained shared understanding. Bundles contain selected

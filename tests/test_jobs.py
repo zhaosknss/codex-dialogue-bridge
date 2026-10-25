@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import sys
@@ -18,6 +19,7 @@ from dialogue_bridge.context import Context
 from dialogue_bridge.jobs import Jobs
 from dialogue_bridge.runtime import dispatch, _packet
 from dialogue_bridge.models import derive
+from dialogue_bridge.service import hook_result
 
 A = "11111111-1111-4111-8111-111111111111"
 
@@ -176,6 +178,169 @@ class JobTests(unittest.TestCase):
             run.return_value.stdout = '{"execute":"unrelated action"}'
             with self.assertRaises(ValueError):
                 derive(settings, {})
+
+    def queue_model(self, history=None):
+        value = self.connect(history)
+        self.jobs.cancel(value["queued"]["id"], value["directory"])
+        self.jobs.settings(value["directory"], {"auto_understand": True, "model_command": ["fictional-runner"]})
+        value["model_job"] = self.jobs.enqueue(value["directory"], "Fictional", "understand")
+        return value
+
+    @staticmethod
+    def model_output(settings, packet):
+        source = packet["evidence"][0]
+        return {"reason": "Fictional reviewed input", "entries": [{"key": "example", "scope": "shared",
+                "text": "Keep the fictional interpretation scoped.",
+                "sources": [{"ref": source["ref"], "quote": source["text"][:100]}]}], "remove_keys": []}
+
+    def test_model_wait_allows_reads_and_stop_hook_sync_enrollment(self):
+        value = self.queue_model()
+        def output(settings, packet):
+            opened = dispatch("open", {"queue": False}, actor=A)
+            self.assertTrue(opened["bound"])
+            self.assertIsNone(hook_result({"hook_event_name": "Stop", "session_id": A}, dispatcher=dispatch, environ={}))
+            self.assertTrue(any(j["kind"] == "sync" and j["status"] == "pending" for j in self.jobs.list(value["directory"])))
+            return self.model_output(settings, packet)
+        with patch("dialogue_bridge.models.derive", side_effect=output):
+            result = dispatch("process_jobs")
+        self.assertEqual(result["jobs"][0]["status"], "complete", result)
+
+    def test_stop_hook_can_dirty_running_history_job_without_document_lock(self):
+        value = self.connect()
+        def refresh(context):
+            hook_result({"hook_event_name": "Stop", "session_id": A}, dispatcher=dispatch, environ={})
+            return []
+        with patch("dialogue_bridge.runtime.refresh_context", side_effect=refresh):
+            result = dispatch("process_jobs")
+        self.assertEqual(result["jobs"][0]["id"], value["queued"]["id"])
+        self.assertEqual(result["jobs"][0]["status"], "pending")
+
+    def test_model_result_rejects_concurrent_chat_revision(self):
+        value = self.queue_model()
+        def output(settings, packet):
+            dispatch("chat_update", {"text": "A newer independent chat interpretation.", "operation_id": "during-model",
+                                     "expected_revision": packet["revision"]}, actor=A)
+            return self.model_output(settings, packet)
+        with patch("dialogue_bridge.models.derive", side_effect=output):
+            result = dispatch("process_jobs")
+        self.assertEqual(result["jobs"][0]["status"], "failed")
+        self.assertIn("changed during interpretation", result["jobs"][0]["error"])
+        context = Context(value["directory"])
+        try:
+            self.assertIsNone(context.snapshot()[1])
+            self.assertEqual(context.ledger.snapshot().state["dialogue_documents"]["chats"][A]["text"],
+                             "A newer independent chat interpretation.")
+        finally:
+            context.close()
+
+    def test_model_result_rejects_source_changes_and_can_be_explicitly_retried(self):
+        value = self.queue_model()
+        def output(settings, packet):
+            context = Context(value["directory"])
+            try:
+                context.archive.sync(History("A new fictional correction."), A)
+            finally:
+                context.close()
+            return self.model_output(settings, packet)
+        with patch("dialogue_bridge.models.derive", side_effect=output):
+            failed = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(failed["status"], "failed")
+        self.assertEqual(self.jobs.progress(value["directory"])["change"], 0)
+        self.jobs.retry(failed["id"], value["directory"])
+        with patch("dialogue_bridge.models.derive", side_effect=self.model_output):
+            self.assertEqual(dispatch("process_jobs")["jobs"][0]["status"], "complete")
+
+    def test_committed_result_recovers_progress_failure_without_another_model_call(self):
+        value = self.queue_model()
+        original = Jobs.progress
+        def unavailable(self, directory, position=None):
+            if position is not None:
+                raise OSError("Fictional progress write failure")
+            return original(self, directory)
+        with patch("dialogue_bridge.models.derive", side_effect=self.model_output), patch.object(Jobs, "progress", unavailable):
+            failed = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(failed["status"], "failed")
+        context = Context(value["directory"])
+        try:
+            saved_revision = context.ledger.revision
+            self.assertEqual(saved_revision, 1)
+        finally:
+            context.close()
+        self.assertEqual(self.jobs.progress(value["directory"])["change"], 0)
+        self.jobs.retry(failed["id"], value["directory"])
+        with patch("dialogue_bridge.models.derive", side_effect=AssertionError("A committed result must not invoke a model again")) as model:
+            recovered = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(recovered["status"], "complete", recovered)
+        self.assertTrue(recovered["result"]["update"]["replayed"])
+        self.assertGreater(self.jobs.progress(value["directory"])["change"], 0)
+        self.assertIsNone(self.jobs.model_result(failed["id"]))
+        model.assert_not_called()
+        context = Context(value["directory"])
+        try:
+            self.assertEqual(context.ledger.revision, saved_revision)
+        finally:
+            context.close()
+
+    def test_no_change_result_also_recovers_without_rebilling(self):
+        value = self.queue_model()
+        original = Jobs.progress
+        def unavailable(self, directory, position=None):
+            if position is not None:
+                raise OSError("Fictional progress write failure")
+            return original(self, directory)
+        with patch("dialogue_bridge.models.derive", return_value={"reason": "No changes", "entries": [], "remove_keys": []}), \
+             patch.object(Jobs, "progress", unavailable):
+            failed = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(failed["status"], "failed")
+        self.jobs.retry(failed["id"], value["directory"])
+        with patch("dialogue_bridge.models.derive", side_effect=AssertionError("Do not repeat the completed no-change call")):
+            recovered = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(recovered["status"], "complete", recovered)
+        self.assertFalse(recovered["result"]["updated"])
+
+    def test_completed_response_survives_post_model_lock_contention(self):
+        from dialogue_bridge import runtime
+        value = self.queue_model()
+        original = runtime.space_lock
+        calls = 0
+        @contextmanager
+        def busy_on_apply(directory):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise ValueError("Fictional space is temporarily busy")
+            with original(directory):
+                yield
+        with patch("dialogue_bridge.models.derive", side_effect=self.model_output), \
+             patch.object(runtime, "space_lock", busy_on_apply):
+            failed = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(failed["status"], "failed")
+        self.assertIsNotNone(self.jobs.model_result(failed["id"]))
+        self.jobs.retry(failed["id"], value["directory"])
+        with patch("dialogue_bridge.models.derive", side_effect=AssertionError("Reuse the persisted response")):
+            recovered = dispatch("process_jobs")["jobs"][0]
+        self.assertEqual(recovered["status"], "complete", recovered)
+
+    def test_progress_recovery_cannot_rewind_a_newer_completed_slice(self):
+        self.jobs.progress(self.root, (1, 100))
+        self.jobs.progress(self.root, (1, 0))
+        self.assertEqual(self.jobs.progress(self.root, (1, 200))["offset"], 0)
+        self.jobs.progress(self.root, (2, 100))
+        self.assertEqual(self.jobs.progress(self.root, (1, 0))["change"], 2)
+
+    def test_continuations_apply_distinct_results_for_one_coalesced_job(self):
+        value = self.queue_model(History("Fictional input. " * 600))
+        self.jobs.settings(value["directory"], {"model_chars": 4000})
+        with patch("dialogue_bridge.models.derive", side_effect=self.model_output) as model:
+            for _ in range(20):
+                row = dispatch("process_jobs")["jobs"][0]
+                self.assertIn(row["status"], {"complete", "pending"}, row)
+                if row["status"] == "complete":
+                    break
+            else:
+                self.fail("The bounded fictional history did not finish")
+        self.assertGreater(model.call_count, 1)
+        self.assertEqual(self.jobs.progress(value["directory"])["offset"], 0)
 
 
 if __name__ == "__main__":
