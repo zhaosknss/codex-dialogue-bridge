@@ -1,16 +1,22 @@
 # Dialogue Bridge
 
-**Carry understanding forward. Let each chat keep its own view.**
+**Build and maintain project docs, skills, and workflows from your Codex chats.**
 
-A Codex plugin for carrying context, corrections, and useful discoveries across
-existing conversations. Find the original discussion, reuse what was worked out,
-and revise the understanding as your work develops.
+A Codex plugin that brings together decisions, corrections, and findings from
+the chats you select. When a new finding changes how your project works, trace
+it to the original conversation and use it to propose a focused update to your
+project docs or skills.
 
-One chat remembers why the direction changed. Another has already tried an
-approach. Bridge connects that background through shared understanding, each
-chat's own working document, and original sources you can revisit.
+One chat records a release checklist. Another finds that the archive fails
+even though the source check passes. Bridge keeps their views separate and
+records the evidence behind a proposed change. You decide what goes into the
+project's checklist and skill.
 
-[Install](#install-in-codex) · [How understanding works](docs/UNDERSTANDING.md) · [Try the walkthrough](#try-the-fictional-walkthrough) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
+**[Try the release-check example](docs/RELEASE_CHECK_EXAMPLE.md)** · [Install](#install-in-codex) · [How understanding works](docs/UNDERSTANDING.md) · [Share feedback](https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose)
+
+The example uses fictional chats. Read it on GitHub or open the offline HTML
+copy in your browser. The optional Python replay runs the checks in a temporary
+project and demonstrates the Bridge revision flow.
 
 ## Use it in ordinary conversation
 

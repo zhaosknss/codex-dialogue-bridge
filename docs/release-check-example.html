@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Follow one fictional packaging failure from its source chat into a reviewed project Skill update.">
+  <title>Dialogue Bridge | A project Skill gets a new check</title>
+  <style>
+    :root { color-scheme: light; --ink:#20273d; --paper:#f0f3fa; --card:#fff; --accent:#334bc6; --pass:#176548; --line:#c9d1e6; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:1rem/1.65 system-ui,sans-serif; }
+    main { width:min(100% - 2.5rem, 58rem); margin:2rem auto 3rem; }
+    header { border-top:6px solid var(--accent); border-bottom:1px solid var(--line); padding:1rem 0 1.6rem; }
+    .label, .status, code, pre { font-family:Consolas,monospace; }
+    .label { font-size:.82rem; letter-spacing:.04em; }
+    h1 { font-size:clamp(2rem,6vw,3.5rem); line-height:1.06; letter-spacing:-.045em; margin:.9rem 0; max-width:16ch; }
+    p { margin:.65rem 0; }
+    header p { max-width:63ch; }
+    .change { border-left:4px solid var(--pass); background:#e2f2ea; padding:.8rem 1rem; margin-top:1.1rem; color:#164932; }
+    details { background:var(--card); border:1px solid var(--line); margin-top:.8rem; }
+    summary { padding:.8rem 1rem; cursor:pointer; font-weight:700; }
+    summary span { color:var(--accent); padding-right:.55rem; }
+    details[open] summary { border-bottom:1px solid var(--line); }
+    .body { padding:.45rem 1rem 1rem; }
+    blockquote { border-left:3px solid var(--accent); padding:.2rem .8rem; margin:.75rem 0; }
+    .status { display:flex; flex-wrap:wrap; gap:.4rem .9rem; font-size:.86rem; }
+    .pass { color:var(--pass); }
+    .fail { color:#93292e; }
+    code { overflow-wrap:anywhere; }
+    footer { margin-top:1.5rem; border-top:1px solid var(--line); padding-top:.75rem; font-size:.9rem; }
+    a { color:#263db6; text-underline-offset:.2em; }
+    a:focus-visible, summary:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    @media (max-width:36rem) { main { width:calc(100% - 1.5rem); margin-top:1rem; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="label">DIALOGUE BRIDGE / FICTIONAL PROJECT</div>
+    <h1>One failed release check changes a Skill</h1>
+    <p>See how a finding from a packaging chat becomes a reviewed update to a project's release checklist and Skill.</p>
+    <div class="change"><strong>Proposed addition</strong><br>Then run the packaged app from a clean directory.</div>
+  </header>
+  <details open>
+    <summary><span>01</span> Read the original finding</summary>
+    <div class="body">
+      <p>The planning chat's original rule was to run the smoke check from the source checkout.</p>
+      <blockquote>The source check passed, but the release archive failed with ModuleNotFoundError: No module named 'release_helper'.</blockquote>
+      <p class="status"><span class="pass">Source check · exit 0</span><span class="fail">Original archive · exit 1</span></p>
+    </div>
+  </details>
+  <details>
+    <summary><span>02</span> See what the review changes</summary>
+    <div class="body">
+      <p>The packaging chat proposes a new check with references to both source messages. The shared rule stays as it was until approval. After approval, the planning chat's dependent view needs review. The packaging chat's separate view stays current.</p>
+      <p>The reviewed wording can go into <code>docs/release-checks.md</code> and <code>.agents/skills/release-check/SKILL.md</code>.</p>
+      <div class="change">Run the smoke check from the source checkout.<br><strong>+ Then run the packaged app from a clean directory.</strong></div>
+    </div>
+  </details>
+  <details>
+    <summary><span>03</span> See what a fresh chat receives</summary>
+    <div class="body">
+      <p>A fresh reader can retrieve the revised rule and the packaging chat's original finding. The replay applies the approved wording to the example files and tests a rebuilt archive containing the missing helper.</p>
+      <p class="status pass">Fixed archive · exit 0 · Release smoke check passed.</p>
+    </div>
+  </details>
+  <footer>
+    <p>The replay uses the Bridge runtime with fictional chats and scripted approval. The archive checks run in a temporary project. Open the source and replay instructions for details.</p>
+    <p><a href="https://github.com/zhaosknss/codex-dialogue-bridge/blob/codex/initial-plugin/docs/RELEASE_CHECK_EXAMPLE.md">Read the case and replay it</a> · <a href="https://github.com/zhaosknss/codex-dialogue-bridge#install-in-codex">Install Dialogue Bridge</a> · <a href="https://github.com/zhaosknss/codex-dialogue-bridge/issues/new/choose">Share feedback</a></p>
+  </footer>
+</main>
+</body>
+</html>
