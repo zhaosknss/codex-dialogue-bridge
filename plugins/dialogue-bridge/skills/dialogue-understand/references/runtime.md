@@ -59,14 +59,50 @@ history does not mean that a model has semantically reviewed all of it.
 ## Expand evidence only as needed
 
 `search` accepts `{name, query, role?, limit?, chars?}` and searches indexed original
-text. Use distinct formulations for a conceptual question; this index does not
-promise semantic retrieval. `evidence` accepts `{name, ref, offset?, chars?, before?,
-after?}`. Use the exact returned references and original quotes in revisions.
+text. The latest literal matches from each selected chat are interleaved. If
+`more_matches` is true, narrow the search or use a related phrase. Check older
+context when it affects the decision. `evidence` accepts
+`{name, ref, offset?, chars?, before?, after?}`. Use the exact references and
+original quotes in revisions.
 
 The source archive covers persisted user/assistant text; it is not a complete index
 of attachments, tool results or current project files. Read relevant current files
 with host tools when a conclusion depends on actual state. Do not reread the same
 material through a second source reader unless content is missing or needs checking.
+
+## Review a project file edit
+
+Use the project checkout and existing Markdown file named by the user or clearly
+identified in the task. Read the current file and the latest relevant evidence
+from the selected chats. Check whether the proposed rule fits the current code,
+scope, prior decisions and any later correction. If the evidence does not support
+a change, explain the unresolved point and leave the file alone.
+
+Use `propose_project_edit` with `project_root` (absolute), `path` (root-relative
+with forward slashes), a unique verbatim `before` excerpt and its `after`
+replacement, `reason`, `sources` (exact `{ref, quote}` citations), `scope` if
+needed, the current `expected_revision`, and a unique `operation_id`. One proposal
+covers one existing UTF-8 Markdown file up to 256 KiB. The private proposal retains
+the reviewed diff and quotations. Keep the change focused and use a separate
+proposal for each additional file. If the user is working from a fresh selection,
+finish the existing source selection flow before drafting.
+
+Show the returned diff, the reason and where to check its evidence. Use
+`apply_project_edit` with `{name, project_root, id, user_confirmed: true}` only
+after the user approves that specific diff. If there may have been new discussion
+since the preview, refresh the relevant evidence and check for corrections first.
+The saved proposal supplies the filename and replacement at apply time.
+Use `review_proposal` to record a rejection. If evidence
+or the file has changed, refresh it and show a new proposal for review. A failed
+write may leave the approval saved. Retrying the same approved edit checks the
+base again, and an identical target is reported as `already_current`.
+
+Read the resulting project file or run its normal check before reporting the
+outcome. In a later chat, load the actual project file for the procedure and use
+`proposals` with `{name, project_root, path?, status?, limit?}` to find the relevant
+edits. The brief list starts with the newest proposals for that checkout. Reopen
+one with `{name, project_root, id}` when you need its full diff and sources. Approval
+and file presence do not show that another chat used the revised procedure.
 
 ## Revise shared understanding
 

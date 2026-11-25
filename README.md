@@ -51,6 +51,16 @@ useful findings back to its own work.
 You do not need to write a handoff document, fill in roles, or prepare JSON.
 Opening background as a reader keeps future source enrollment a separate choice.
 
+### Review a change to a project Skill or document
+
+Open your project's local Codex chat with Dialogue Bridge and ask, “Check these
+chats against our release Skill and show me a proposed update.” Bridge saves a
+proposal for one existing Markdown file, with a diff and
+original quotes. After you approve the displayed diff, it checks that the indexed
+evidence and file still match the preview before applying it. The next chat can
+use the updated project file and look up its proposals by path, then open the
+diff and original quotes for the change it needs.
+
 ## What stays connected
 
 The shared understanding records goals, formative examples, corrections, scoped
@@ -112,7 +122,7 @@ and Git. Dependency setup needs Internet access the first time.
 Install the current early release:
 
 ```text
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.1
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.2
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 
@@ -121,7 +131,7 @@ that named source before installing the new tag:
 
 ```text
 codex plugin marketplace remove dialogue-bridge
-codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.1
+codex plugin marketplace add zhaosknss/codex-dialogue-bridge --ref v0.2.0-alpha.2
 codex plugin add dialogue-bridge@dialogue-bridge
 ```
 

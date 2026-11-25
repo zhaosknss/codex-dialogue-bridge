@@ -1,6 +1,6 @@
 ---
 name: dialogue-understand
-description: Use and revise an existing Dialogue Bridge understanding space across ongoing chats. Load relevant shared understanding, keep this chat's own interpretation, and return sourced discoveries. Use for continued understanding, corrections and task continuation; use dialogue-collaborate for first-time chat links or asking original chats to exchange views.
+description: Use and revise an existing Dialogue Bridge understanding space across ongoing chats. Use for continued understanding, corrections, and evidence-backed updates to project docs or skills. Use dialogue-collaborate for first-time chat links or asking original chats to exchange views.
 ---
 
 # Shared understanding, independent chats
@@ -77,6 +77,11 @@ proposal with original references, the reason for change, and any contrary evide
 Revise the affected entries; preserve unrelated understanding and previous versions.
 Shared updates and dependency notices invite each relevant chat to reconsider;
 they do not require the same conclusion or authorize another project's execution.
+
+When asked whether a project document or Skill should change, use the
+[project file review workflow](references/runtime.md#review-a-project-file-edit).
+Show what changes and why, with original evidence, before seeking approval for
+the exact diff. A saved understanding or a proposal does not change a project file.
 
 Source membership and reader binding are separate. Reading a space does not make
 this chat a continuing source. If a requested shared correction depends on words

@@ -34,6 +34,9 @@ independent view, and return useful sourced contributions. Shared documents and
 the index change as evidence accumulates; this public skill does not store private
 user experiences. Each chat may challenge the coordinator.
 
+If the request names a project document or Skill to review, continue from the
+selected evidence to [a project file proposal](../dialogue-understand/references/runtime.md#review-a-project-file-edit).
+
 When the user wants a new chat to understand prior work, writing choices, examples
 or the way they have been collaborating, use [saved background and continuation](references/continuation.md).
 That mode separates source chats from the new reader and can reuse a saved name.

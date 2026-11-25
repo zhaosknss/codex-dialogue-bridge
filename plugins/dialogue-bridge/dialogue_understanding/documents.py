@@ -40,7 +40,7 @@ _WRITE_FIELDS = {"operation_id", "expected_revision"}
 _CHAT_FIELDS = {"text", "dependencies", "title", "reason", "sources", "scope",
                 "owner_thread", "draft", "document_sha256"}
 _PROPOSAL_FIELDS = {"text", "dependencies", "title", "reason", "sources", "scope",
-                    "entries", "remove_keys", "target_key", "type"}
+                    "entries", "remove_keys", "target_key", "type", "project_edit"}
 _DERIVED_ENTRY_FIELDS = {"source_warnings", "needs_review", "revision", "updated_at"}
 
 
@@ -379,7 +379,7 @@ class DocumentStore:
                     "type": payload.get("type", "interpretation"),
                     "evidence_status": "references_supplied" if sources or checked or dependencies else "unsourced_proposal",
                     "meaning": "Author's proposal; not a user decision, global policy, or proof of adoption"}
-        for field in ("entries", "remove_keys", "target_key"):
+        for field in ("entries", "remove_keys", "target_key", "project_edit"):
             if field in payload:
                 proposal[field] = checked if field == "entries" else deepcopy(payload[field])
         return proposal
@@ -570,7 +570,7 @@ class DocumentStore:
         return self._file_hash(relative) != previous["sha256"]
 
     @staticmethod
-    def _atomic(path, data, *, previous=None, compare=False):
+    def _atomic(path, data, *, previous=None, compare=False, mode=None):
         path.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporary = tempfile.mkstemp(prefix=".dialogue-", dir=path.parent)
         try:
@@ -578,6 +578,8 @@ class DocumentStore:
                 stream.write(data)
                 stream.flush()
                 os.fsync(stream.fileno())
+            if mode is not None:
+                os.chmod(temporary, mode)
             if compare and (path.read_bytes() if path.exists() else None) != previous:
                 return False
             os.replace(temporary, path)

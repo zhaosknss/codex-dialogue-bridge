@@ -39,19 +39,20 @@ The proposed project edit applies to `docs/release-checks.md` and the project's
 
 ## 3. Check what a fresh chat can pick up
 
-The replay opens the shared space as a fresh reader and verifies that it can
-retrieve the revised rule and its original evidence. The script then applies the
-approved wording to the two example project files, rebuilds the archive with
-the missing helper, and runs the packaged check again:
+The replay opens the shared space as a fresh reader and retrieves the revised
+rule and its original evidence. The reader uses the Bridge project edit actions
+to preview and, after scripted approval, apply one diff per file. The project
+proposal can also be made directly from selected evidence. A separate reader
+checks the approved Skill diff and its original finding, then the replay rebuilds
+the archive with the missing helper and runs the packaged check again:
 
 ```text
 Fixed archive: exit 0. Release smoke check passed.
 ```
 
 The replay uses the Bridge runtime with fictional transcripts and scripted
-decisions. The smoke commands run against real temporary archives. Project file
-edits and approval are explicit steps in the replay. A live Codex chat can use
-the same evidence to draft or apply an edit when the user asks.
+decisions. The smoke commands run against real temporary archives. In a live
+Codex chat, the user reviews the diff before approval.
 
 ## Replay the example
 

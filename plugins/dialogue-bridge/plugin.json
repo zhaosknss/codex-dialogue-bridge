@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "dialogue-bridge",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0-alpha.2",
   "description": "Continue sourced, revisable understanding across independent Codex chats, with shared context, each chat's own view and useful discoveries carried back into its work.",
   "license": "MIT",
   "extensions": {

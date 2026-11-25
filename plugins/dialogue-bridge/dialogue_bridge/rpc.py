@@ -32,7 +32,7 @@ class ReadOnlyCodex:
         self.reader.start()
         try:
             self.request("initialize", {
-                "clientInfo": {"name": "dialogue_bridge_reader", "version": "0.2.0-alpha.1"},
+                "clientInfo": {"name": "dialogue_bridge_reader", "version": "0.2.0-alpha.2"},
             })
             self._send({"method": "initialized", "params": {}})
         except BaseException:

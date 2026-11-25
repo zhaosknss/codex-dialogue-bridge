@@ -97,7 +97,8 @@ function renderActivity(target, title, items, kind) {
     card.append(badge(status, /pending|queued|review/.test(status)), el("h3", item.title || item.kind || item.id || "Contribution"));
     const text = describe(item); if (text) card.append(el("p", text)); detail(card, "Sources and details", item);
     const actions = el("div", undefined, "row-actions");
-    if (kind === "proposal" && /pending|review|proposed/.test(status)) for (const decision of ["accept", "reject"]) {
+    if (item.project_edit && status === "pending") card.append(el("p", "Review and apply this project edit in Codex."));
+    if (kind === "proposal" && /pending|review|proposed/.test(status)) for (const decision of item.project_edit ? ["reject"] : ["accept", "reject"]) {
       const button = el("button", decision === "accept" ? "Review & accept" : "Reject", "quiet"); button.addEventListener("click", () => run(async () => { const data = await api("review_proposal", {id: item.id, decision}); result(data); notice(data.needs_source_review ? (data.next || "Ask Dialogue Bridge in Codex to review this correction against its sources.") : data.status ? `Proposal status: ${data.status}` : "Review recorded. Check the proposal's resulting status."); await loadActivity(); })); actions.append(button);
     }
     if (kind === "job" && /failed|error/.test(status)) { const retry = el("button", "Retry work", "quiet"); retry.addEventListener("click", () => run(async () => { result(await api("jobs", {id: item.id, operation: "retry"})); notice("Retry requested. Completion is shown in the work status."); await loadActivity(); })); actions.append(retry); }

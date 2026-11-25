@@ -1,7 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-alpha.2 — 2026-11-26
 
+- Use findings from selected Codex chats to propose a focused change to a
+  project document or Skill. Review the diff and original quotations before
+  applying it. The approved edit checks the checkout, file contents and
+  indexed evidence before writing.
+- Find past file proposals by checkout and path. Open one result to review
+  its full diff and sources.
+- Interleave recent literal matches from selected chats so a long transcript
+  cannot fill the results ahead of another chat's finding.
+- Follow the release-check example from the original packaging failure through
+  a reviewed Skill update and a successful packaged smoke check.
 - Partial shared revisions retain untouched entries' original evidence hashes,
   so changed sources remain flagged and unrelated invalid quotations do not block
   a scoped correction.

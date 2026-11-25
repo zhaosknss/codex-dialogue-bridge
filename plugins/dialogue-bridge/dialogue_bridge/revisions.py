@@ -134,6 +134,8 @@ def review(context, store, actor, arguments, allowed):
         return {"proposal_id": proposal["id"], "status": proposal["status"], "needs_source_review": True,
                 "next": "An actual participant with this proposal's source scope must review it; no shared change was applied"}
     target_status = "accepted" if intent_input["decision"] == "accept" else "rejected"
+    if proposal.get("project_edit") and target_status == "accepted":
+        raise ValueError("Use apply_project_edit after the user approves the displayed project diff")
     if previous_intent:
         intent = deepcopy(previous_intent.transition.records[0].body["intent"])
         if proposal["status"] not in {"pending", "deferred", target_status}:

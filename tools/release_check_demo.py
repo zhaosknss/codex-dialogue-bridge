@@ -116,11 +116,28 @@ def run(root):
         check(selected["text"] == AFTER and selected["sources"][-1]["quote"] == FINDING,
               "The fresh reader did not receive the revised rule and source")
 
-    # Simulate the developer applying the reviewed change to the project files.
-    for path, heading in project_files.items():
-        check(path.read_text(encoding="utf-8") == f"{heading}{BEFORE}\n",
-              f"The project file changed before the developer applied the edit: {path.name}")
-        path.write_text(f"{heading}{selected['text']}\n", encoding="utf-8")
+        project = root / "project"
+        for path, heading in project_files.items():
+            proposal = fresh_reader.call("propose_project_edit", {**change(), "project_root": str(project),
+                "path": path.relative_to(project).as_posix(), "before": BEFORE, "after": selected["text"],
+                "reason": "Check the archive too, because the source check missed a missing helper.", "sources": sources})
+            check(path.read_text(encoding="utf-8") == f"{heading}{BEFORE}\n", "A preview changed the target file")
+            check("+" + AFTER in proposal["diff"], "The expected change is missing from the review diff")
+            result = fresh_reader.call("apply_project_edit", {"name": SPACE, "project_root": str(project),
+                                      "id": proposal["proposal_id"], "user_confirmed": True})
+            check(result["status"] == "applied", "The approved edit did not apply")
+            check(path.read_text(encoding="utf-8") == f"{heading}{AFTER}\n", "Unexpected project file content")
+
+        # A separate chat traces the adopted rule back to its original finding.
+        next_reader = BridgeService(actor="55555555-5555-4555-8555-555555555555")
+        skill = next(path for path in project_files if path.name == "SKILL.md")
+        selection = {"name": SPACE, "project_root": str(project)}
+        shortlist = next_reader.call("proposals", {**selection, "status": "accepted",
+                                     "path": skill.relative_to(project).as_posix()})["proposals"]
+        check(len(shortlist) == 1 and "project_edit" not in shortlist[0], "The edit shortlist is incorrect")
+        reviewed = next_reader.call("proposals", {**selection, "id": shortlist[0]["id"]})["proposals"][0]
+        check(reviewed["sources"][-1]["quote"] == FINDING, "The next task could not trace the Skill's review")
+        check(AFTER in skill.read_text(encoding="utf-8"), "The next check did not load the revised Skill")
     fixed = root / "after.pyz"
     pack(fixed, include_helper=True)
     fixed_run = smoke(fixed, clean)
@@ -128,7 +145,7 @@ def run(root):
     print("Source check: exit 0. Original archive: exit 1 (missing release_helper).")
     print("Bridge: pending correction preserved the old rule. Accepted revision reached a fresh reader.")
     print("Bridge: dependent chat marked for review. Unrelated chat view retained.")
-    print("Scripted project edits: docs/release-checks.md and .agents/skills/release-check/SKILL.md.")
+    print("Reviewed project edits applied: docs/release-checks.md and .agents/skills/release-check/SKILL.md.")
     print("Fixed archive: exit 0. Release smoke check passed.")
 
 

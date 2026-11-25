@@ -125,7 +125,7 @@ def _tool(action, description, properties=None, required=(), readonly=False):
     return {"name": "bridge_" + action, "description": description,
             "inputSchema": {"type": "object", "properties": {**COMMON, **(properties or {})},
                             "required": list(required), "additionalProperties": False},
-            "annotations": {"readOnlyHint": readonly, "destructiveHint": action in {"import", "restore"},
+            "annotations": {"readOnlyHint": readonly, "destructiveHint": action in {"import", "restore", "apply_project_edit"},
                             "openWorldHint": action in {"connect", "sync", "process_jobs"}}}
 
 
@@ -177,10 +177,29 @@ TOOLS = [
         "type": _s("Contribution type, for example revision or disagreement"),
         "target_key": _s("Existing shared entry targeted by the proposal"),
         "payload": {"type": "object", "description": "Proposed shared update arguments, including entries or text"}}),
-    _tool("proposals", "List pending and reviewed understanding proposals.", {"status": _s("Optional proposal status")}, readonly=True),
+    _tool("proposals", "List understanding proposals, or select a project_root for a brief list of file edits. Supply the project_root and id to open the complete diff and sources.", {
+        "status": _s("Optional proposal status"), "project_root": _s("Absolute project checkout to look up"),
+        "path": _s("Optional path relative to project_root"), "id": _s("Optional exact file proposal ID within project_root"),
+        "limit": {"type": "integer", "minimum": 1, "maximum": 30, "description": "Project results to list; default 8"},
+    }, readonly=True),
     _tool("review_proposal", "Accept or reject a specific proposal after reviewing its evidence and current revision.", {
         "id": _s("Proposal id"), "decision": {"type": "string", "enum": ["accept", "reject"]},
         **EDIT}, required=("id", "decision")),
+    _tool("propose_project_edit", "Draft one targeted Markdown or Skill edit from checked original evidence. Returns a diff for user review without changing the project file.", {
+        "project_root": _s("Absolute root of the user's selected project checkout"),
+        "path": _s("Existing Markdown file relative to the project root, using forward slashes"),
+        "before": _s("Exact unique excerpt from the current file, including enough context to identify it"),
+        "after": _s("Replacement excerpt, or empty to remove it"),
+        "reason": _s("Why the evidence changes the current procedure"),
+        "scope": _s("Project or topic scope for this proposal"),
+        "sources": {"type": "array", "items": {"type": "object"}, "description": "Exact {ref, quote} citations for this edit"},
+        "expected_revision": EDIT["expected_revision"], "operation_id": EDIT["operation_id"],
+    }, required=("project_root", "path", "before", "after", "reason", "sources", "expected_revision", "operation_id")),
+    _tool("apply_project_edit", "Apply one saved Markdown diff after the user explicitly approves that exact proposal. Refuses changed indexed evidence, a different checkout, or a changed target file.", {
+        "id": _s("Id of the project edit proposal reviewed by the user"),
+        "project_root": _s("Same explicitly selected project checkout used for the preview"),
+        "user_confirmed": {"type": "boolean", "description": "True only after the user explicitly approves the displayed diff for this proposal"},
+    }, required=("id", "project_root", "user_confirmed")),
     _tool("documents", "Read the common index, shared understanding and chat documents; no arbitrary local file reads.", {
         "scope": {"type": "string", "enum": ["index", "shared", "chat", "all"]}}, readonly=True),
     _tool("import_document", "Collect an explicitly selected edited document with revision checking; file changes alone do not prove user approval.", {

@@ -207,12 +207,13 @@ class Archive:
             raise ValueError("Message not found within selected, successfully indexed history")
         return dict(row)
 
-    def search(self, query, *, role=None, limit=8, char_budget=6000):
+    def search(self, query, *, role=None, limit=8, char_budget=6000, threads=None):
         terms = list(dict.fromkeys(query.casefold().split()))
         if not terms or not 1 <= limit <= 30 or not 1 <= char_budget <= 20000:
             raise ValueError("Use nonempty search terms, limit 1..30 and character budget 1..20000")
-        where = ["thread_id IN (" + ",".join("?" for _ in self.threads) + ")"]
-        args = list(self.threads)
+        selected = self.threads if threads is None else tuple(self.selected(ident) for ident in threads)
+        where = ["thread_id IN (" + ",".join("?" for _ in selected) + ")" if selected else "0"]
+        args = list(selected)
         for term in terms:
             where.append("instr(search_text, ?) > 0")
             args.append(term)

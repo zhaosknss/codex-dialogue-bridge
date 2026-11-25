@@ -248,6 +248,50 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(found["entries"][0]["sources"], [])
         self.assertNotIn(B + "/b1/m1", json.dumps(found))
 
+    def test_search_surfaces_recent_matches_from_each_permitted_chat(self):
+        self.history.data[A] = [turn(f"a{i}", user("msg", f"Release finding {i}")) for i in range(12)]
+        self.history.data[B] = [turn("b1", user("msg", "Release caveat from the reviewer"))]
+        self.connect()
+        self.sync()
+        query = {"name": "Fictional space", "query": "release", "limit": 2}
+        result = self.reader.call("search", query)
+        self.assertEqual([hit["ref"] for hit in result["matches"]], [A + "/a11/msg", B + "/b1/msg"])
+        self.assertEqual(result["match_count"], 13)
+        self.assertTrue(result["more_matches"])
+        visible = self.a.call("search", query)
+        self.assertEqual([hit["ref"] for hit in visible["matches"]], [A + "/a11/msg", A + "/a10/msg"])
+        self.assertEqual(visible["match_count"], 12)
+
+    def test_project_proposal_summaries_filter_by_checkout_path_and_scope(self):
+        self.connect()
+        self.sync()
+        project, other = self.root / "project", self.root / "other"
+        for root in (project, other):
+            root.mkdir()
+            for path in ("SKILL.md", "guide.md"):
+                (root / path).write_bytes(b"Run the source check.\n")
+
+        def draft(root, path, after):
+            return self.a.call("propose_project_edit", {"name": "Fictional space", **self.write(),
+                "project_root": str(root), "path": path, "scope": "story", "before": "Run the source check.",
+                "after": after, "reason": "Retain the local release evidence.", "sources": self.entry()["sources"]})
+
+        first = draft(project, "SKILL.md", "Run the archive check.")
+        draft(project, "guide.md", "Document the package.")
+        latest = draft(project, "SKILL.md", "Run both checks.")
+        draft(other, "SKILL.md", "Run the old check.")
+        query = {"name": "Fictional space", "project_root": str(project), "path": "SKILL.md", "limit": 1}
+        summary = self.reader.call("proposals", query)
+        self.assertEqual((summary["total"], summary["more"]), (2, True))
+        self.assertEqual(summary["proposals"][0]["id"], latest["proposal_id"])
+        self.assertNotIn("project_edit", summary["proposals"][0])
+        self.assertNotIn("sources", summary["proposals"][0])
+        detail = self.reader.call("proposals", {**query, "id": first["proposal_id"]})["proposals"][0]
+        self.assertIn("+Run the archive check.", detail["project_edit"]["diff"])
+        self.assertEqual(detail["sources"][0]["quote"], "Let us discuss first.")
+        self.assertEqual(self.b.call("proposals", {**query, "id": first["proposal_id"]})["total"], 0)
+        self.assertEqual(self.reader.call("proposals", {**query, "status": "accepted"})["total"], 0)
+
     def test_default_jobs_process_selected_history_without_starting_any_model(self):
         self.connect()
         settings = self.reader.call("settings", {"name": "Fictional space"})["settings"]

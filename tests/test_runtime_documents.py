@@ -104,6 +104,82 @@ class RuntimeDocumentTests(unittest.TestCase):
         finally:
             context.close()
 
+    def test_project_edit_uses_reviewed_bytes_and_recovers_after_interrupted_write(self):
+        project = self.root / "project"
+        project.mkdir()
+        file = project / "SKILL.md"
+        original = b"# Review\r\n\r\nUse a clean checkout.\r\n"
+        file.write_bytes(original)
+        arguments = {"project_root": str(project), "path": "SKILL.md", "expected_revision": self.revision(),
+                     "before": "Use a clean checkout.\n", "after": "Use a clean checkout.\nCheck the archive too.\n",
+                     "reason": "A fictional result changes the instructions.", "sources": [self.citation(A)],
+                     "operation_id": "project-skill", "scope": "story"}
+        proposed = self.call("propose_project_edit", arguments)
+        self.assertIn("+Check the archive too.", proposed["diff"])
+        self.assertEqual(file.read_bytes(), original)
+        approval = {"project_root": str(project), "id": proposed["proposal_id"], "user_confirmed": True}
+        with self.assertRaisesRegex(ValueError, "explicit approval"):
+            self.call("apply_project_edit", {**approval, "user_confirmed": False})
+        with self.assertRaisesRegex(ValueError, "visible pending"):
+            self.call("apply_project_edit", approval, actor=B)
+        other_checkout = self.root / "other-project"
+        other_checkout.mkdir()
+        other_file = other_checkout / file.name
+        other_file.write_bytes(original)
+        with self.assertRaisesRegex(ValueError, "same project checkout"):
+            self.call("apply_project_edit", {**approval, "project_root": str(other_checkout)})
+        self.assertEqual(other_file.read_bytes(), original)
+        with self.assertRaisesRegex(ValueError, "Use apply_project_edit"):
+            self.call("review_proposal", {"id": proposed["proposal_id"], "decision": "accept"})
+        atomic = DocumentStore._atomic
+
+        def interrupt_target(path, data, **options):
+            if path == file.resolve():
+                raise OSError("interrupted")
+            return atomic(path, data, **options)
+
+        with patch.object(DocumentStore, "_atomic", staticmethod(interrupt_target)):
+            with self.assertRaisesRegex(OSError, "interrupted"):
+                self.call("apply_project_edit", approval)
+        self.assertEqual(file.read_bytes(), original)
+        self.assertEqual(self.call("proposals")["proposals"][-1]["status"], "accepted")
+        self.assertEqual(self.call("apply_project_edit", approval)["status"], "applied")
+        self.assertEqual(file.read_bytes(), original + b"Check the archive too.\r\n")
+        self.assertEqual(self.call("apply_project_edit", approval)["status"], "already_current")
+        self.assertTrue(self.call("propose_project_edit", arguments)["replayed"])
+
+    def test_project_edit_refuses_stale_target_or_changed_evidence(self):
+        project = self.root / "project"
+        project.mkdir()
+        file = project / "guide.md"
+        original = b"Use the old rule.\n"
+        file.write_bytes(original)
+        arguments = {"project_root": str(project), "path": "guide.md", "expected_revision": self.revision(),
+                     "before": "old rule", "after": "new rule", "reason": "Reflect the selected conversation.",
+                     "sources": [self.citation(A)], "operation_id": "project-guide"}
+        with self.assertRaisesRegex(ValueError, "root-relative"):
+            self.call("propose_project_edit", {**arguments, "path": "../space/shared.md"})
+        proposed = self.call("propose_project_edit", arguments)
+        approval = {"project_root": str(project), "id": proposed["proposal_id"], "user_confirmed": True}
+        file.write_bytes(original + b"Manual note.\n")
+        with self.assertRaisesRegex(ValueError, "file changed"):
+            self.call("apply_project_edit", approval)
+        self.assertEqual(file.read_bytes(), original + b"Manual note.\n")
+        file.write_bytes(original)
+        context = Context(self.directory)
+        try:
+            context.archive.sync(FictionalHistory("Discuss first; the context around the quote changed."), A)
+        finally:
+            context.close()
+        with self.assertRaisesRegex(ValueError, "evidence changed"):
+            self.call("apply_project_edit", approval)
+        self.assertEqual(file.read_bytes(), original)
+        self.assertEqual(self.call("proposals")["proposals"][-1]["status"], "pending")
+        self.call("review_proposal", {"id": proposed["proposal_id"], "decision": "reject"})
+        with self.assertRaisesRegex(ValueError, "visible pending"):
+            self.call("apply_project_edit", approval)
+        self.assertEqual(file.read_bytes(), original)
+
     def test_partial_revision_preserves_unreviewed_source_hashes_and_warnings(self):
         before = next(e for e in self.current().state["understanding"]["entries"] if e["key"] == "story")
         context = Context(self.directory)

@@ -566,6 +566,8 @@ def dispatch(action, arguments=None, *, actor=None):
                 return store.save_chat(author, payload, _shared(context))
             if action == "propose":
                 payload = _payload(arguments)
+                if "project_edit" in payload:
+                    raise ValueError("Use propose_project_edit for changes to project files")
                 if "target" in payload:
                     payload["target_key"] = payload.pop("target")
                 payload["sources"] = _source_input(payload.get("sources", []))
@@ -581,9 +583,18 @@ def dispatch(action, arguments=None, *, actor=None):
                 rows = result["proposals"]
                 if arguments.get("status"):
                     rows = [p for p in rows if p["status"] == arguments["status"]]
+                if any(key in arguments for key in ("project_root", "path", "id", "limit")):
+                    from .project_edits import project_proposals
+                    return {"revision": result["revision"], **project_proposals(rows, arguments)}
                 return {"revision": result["revision"], "proposals": rows}
             if action == "review_proposal":
                 return _review(context, store, author, arguments, allowed)
+            if action in {"propose_project_edit", "apply_project_edit"}:
+                from .project_edits import apply_project_edit, propose_project_edit
+                if host_actor is None:
+                    raise ValueError("Project file edits require the current local Codex chat")
+                operation = propose_project_edit if action == "propose_project_edit" else apply_project_edit
+                return operation(context, store, author, arguments, allowed, registry.home)
             if action == "import_document":
                 payload = _payload(arguments, {"scope", "user_confirmed"})
                 scope = arguments.get("scope", "shared")
@@ -679,28 +690,13 @@ def _search(context, arguments, allowed):
     role = arguments.get("role")
     if role not in {None, "user", "assistant"}:
         raise ValueError("role must be user or assistant")
-    hits = []
-    if threads:
-        sql = "SELECT ref,thread_id,role,text,search_text FROM messages WHERE thread_id IN (" + ",".join("?" for _ in threads) + ")"
-        params = list(threads)
-        if role:
-            sql += " AND role=?"
-            params.append(role)
-        for term in terms:
-            sql += " AND instr(search_text,?)>0"
-            params.append(term)
-        sql += " ORDER BY thread_id,seq LIMIT ?"
-        params.append(limit)
-        for row in context.archive.db.execute(sql, params):
-            if budget <= 0:
-                break
-            start = max(0, row["text"].casefold().find(terms[0]) - 100)
-            excerpt = row["text"][start:start + min(1500, budget)]
-            hits.append({"ref": row["ref"], "thread": row["thread_id"], "role": row["role"],
-                         "offset": start, "excerpt": excerpt, "total_chars": len(row["text"])})
-            budget -= len(excerpt)
+    evidence = context.archive.search(query, role=role, limit=limit, char_budget=budget, threads=threads)
+    hits = [{"ref": hit["ref"], "thread": hit["thread_id"], "role": hit["role"],
+             "offset": hit["excerpt_offset"], "excerpt": hit["excerpt"], "total_chars": hit["text_length"]}
+            for hit in evidence["hits"]]
     visible = _store(context).view(_shared(context), actor=None, scopes=sorted(allowed))
     entries = [e for e in visible["shared"]["entries"] if
                all(t in (e["key"] + " " + e["text"]).casefold() for t in terms)]
-    return {"matches": hits, "entries": entries[:limit],
-            "retrieval": "Literal matching over full indexed source text and current curated entries; conceptual relevance is chosen by the host model"}
+    return {"matches": hits, "entries": entries[:limit], "match_count": evidence["match_count"],
+            "more_matches": evidence["more_matches"],
+            "retrieval": "Literal matches pool recent hits from each selected chat; read originals to judge relevance"}
